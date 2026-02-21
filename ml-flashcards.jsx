@@ -161,6 +161,57 @@ Requirements:
   return parsed.cards.map((c, i) => initCard({ id: `ai-${Date.now()}-${i}`, ...c }));
 }
 
+// ── Multiple Choice Distractor Generation ────────────────────────────────────
+async function generateDistractors(card, allCards) {
+  // Use up to 5 other cards' backs as context so distractors are plausible but wrong
+  const siblings = allCards
+    .filter(c => c.id !== card.id)
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 5)
+    .map(c => c.back);
+
+  const prompt = `You are an expert ML educator creating a multiple choice question.
+
+Question: ${card.front}
+Correct answer: ${card.back}
+
+Generate exactly 3 plausible but INCORRECT answer choices for this question.
+They must be:
+- Realistic enough to challenge someone who partially understands the topic
+- Clearly wrong to someone who truly knows the answer
+- Similar in length and style to the correct answer
+- For math questions, use LaTeX with $...$ and $$...$$ notation just like the correct answer
+${siblings.length ? `\nContext (other cards in this deck for distractor inspiration):\n${siblings.map((s,i) => `${i+1}. ${s}`).join('\n')}` : ''}
+
+Return ONLY valid JSON, no other text:
+{"distractors": ["wrong answer 1", "wrong answer 2", "wrong answer 3"]}`;
+
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1000,
+      messages: [{ role: "user", content: prompt }]
+    })
+  });
+  const data = await response.json();
+  const text = data.content.map(b => b.text || "").join("");
+  const clean = text.replace(/```json|```/g, "").trim();
+  const parsed = JSON.parse(clean);
+  return parsed.distractors;
+}
+
+// Shuffle array helper
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 // ── Palette ───────────────────────────────────────────────────────────────────
 const DECK_COLORS = ["#0ea5e9","#4ade80","#f472b6","#fb923c","#a78bfa","#34d399","#f59e0b","#60a5fa"];
 const DECK_ICONS = ["⬡","∇","∑","◈","⊕","⟁","⊗","◉"];
@@ -175,12 +226,15 @@ const QUALITY_BTNS = [
 export default function App() {
   const [decks, setDecks] = useState(null);
   const [view, setView] = useState("home"); // home | deck | review | generate
+  const [reviewMode, setReviewMode] = useState("flip"); // flip | mc
   const [activeDeck, setActiveDeck] = useState(null);
   const [queue, setQueue] = useState([]);
   const [qIdx, setQIdx] = useState(0);
   const [flipped, setFlipped] = useState(false);
-  const [sessionStats, setSessionStats] = useState({ reviewed: 0, easy: 0, hard: 0 });
+  const [sessionStats, setSessionStats] = useState({ reviewed: 0, easy: 0, hard: 0, correct: 0 });
   const [doneAnim, setDoneAnim] = useState(false);
+  // MC state: null | { choices: [{text,correct}], selected: number|null, loading: bool }
+  const [mcState, setMcState] = useState(null);
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState("");
   const [genTopic, setGenTopic] = useState("");
@@ -210,16 +264,67 @@ export default function App() {
 
   function getDeck(id) { return decks?.find(d => d.id === id); }
 
-  function startReview(deckId) {
+  function startReview(deckId, mode = "flip") {
     const deck = getDeck(deckId);
     if (!deck) return;
     const due = deck.cards.filter(c => c.nextReview <= Date.now());
     if (!due.length) return;
+    const sorted = [...due].sort((a, b) => a.nextReview - b.nextReview);
     setActiveDeck(deckId);
-    setQueue([...due].sort((a, b) => a.nextReview - b.nextReview));
+    setQueue(sorted);
     setQIdx(0); setFlipped(false);
-    setSessionStats({ reviewed: 0, easy: 0, hard: 0 });
+    setReviewMode(mode);
+    setSessionStats({ reviewed: 0, easy: 0, hard: 0, correct: 0 });
+    setMcState(null);
     setView("review");
+    if (mode === "mc") loadMcChoices(sorted[0], deck.cards);
+  }
+
+  async function loadMcChoices(card, allCards) {
+    setMcState({ choices: null, selected: null, loading: true });
+    try {
+      const distractors = await generateDistractors(card, allCards);
+      const choices = shuffle([
+        { text: card.back, correct: true },
+        ...distractors.map(d => ({ text: d, correct: false }))
+      ]);
+      setMcState({ choices, selected: null, loading: false });
+    } catch {
+      // Fall back to flip mode if generation fails
+      setMcState({ choices: null, selected: null, loading: false, error: true });
+    }
+  }
+
+  function handleMcSelect(idx) {
+    setMcState(prev => prev.selected !== null ? prev : { ...prev, selected: idx });
+  }
+
+  function handleMcNext(wasCorrect) {
+    const card = queue[qIdx];
+    // Correct = Easy (3), Wrong = Hard (1)
+    const quality = wasCorrect ? 3 : 1;
+    const updated = sm2(card, quality);
+    updateDecks(prev => prev.map(d =>
+      d.id === activeDeck
+        ? { ...d, cards: d.cards.map(c => c.id === card.id ? { ...c, ...updated } : c) }
+        : d
+    ));
+    setSessionStats(s => ({
+      reviewed: s.reviewed + 1,
+      easy: s.easy + (wasCorrect ? 1 : 0),
+      hard: s.hard + (wasCorrect ? 0 : 1),
+      correct: s.correct + (wasCorrect ? 1 : 0),
+    }));
+    if (qIdx + 1 >= queue.length) {
+      setDoneAnim(true);
+      setTimeout(() => { setDoneAnim(false); setView("deck"); }, 1800);
+    } else {
+      const nextCard = queue[qIdx + 1];
+      const deck = getDeck(activeDeck);
+      setMcState(null);
+      setQIdx(i => i + 1);
+      loadMcChoices(nextCard, deck.cards);
+    }
   }
 
   function handleRate(quality) {
@@ -336,6 +441,7 @@ export default function App() {
         .icon-swatch { width: 34px; height: 34px; border-radius: 8px; background: #0a1220; border: 1px solid #1e2d4a; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; transition: all 0.15s; }
         .icon-swatch:hover { border-color: #2d4a6e; background: #0d1a2e; }
         .icon-swatch.selected { border-color: #0ea5e9; background: #0a1e38; }
+        .mc-choice:not([disabled]):hover { filter: brightness(1.1); transform: translateX(3px); }
         .progress-bar { height: 2px; background: #1e2d4a; border-radius: 1px; overflow: hidden; }
         .progress-fill { height: 100%; border-radius: 1px; transition: width 0.5s ease; }
         .tag { border-radius: 5px; padding: 3px 10px; font-size: 10px; letter-spacing: 0.07em; text-transform: uppercase; }
@@ -484,9 +590,18 @@ export default function App() {
               </div>
               <div style={{ display: "flex", gap: 8, flexShrink: 0, flexWrap: "wrap", justifyContent: "flex-end" }}>
                 <button className="btn-ghost" style={{ fontSize: 11 }} onClick={() => { setGenDeckId(activeDeckData.id); setView("generate"); }}>+ generate cards</button>
-                <button className="btn-primary" style={{ fontSize: 12 }} onClick={() => startReview(activeDeckData.id)} disabled={!activeDeckData.cards.filter(c => c.nextReview <= Date.now()).length}>
-                  review {activeDeckData.cards.filter(c => c.nextReview <= Date.now()).length > 0 ? `(${activeDeckData.cards.filter(c => c.nextReview <= Date.now()).length})` : ""}
-                </button>
+                {(() => {
+                  const dueCount = activeDeckData.cards.filter(c => c.nextReview <= Date.now()).length;
+                  const disabled = !dueCount;
+                  return (<>
+                    <button className="btn-ghost" style={{ fontSize: 12 }} onClick={() => startReview(activeDeckData.id, "flip")} disabled={disabled}>
+                      flip {dueCount > 0 ? `(${dueCount})` : ""}
+                    </button>
+                    <button className="btn-primary" style={{ fontSize: 12 }} onClick={() => startReview(activeDeckData.id, "mc")} disabled={disabled}>
+                      quiz {dueCount > 0 ? `(${dueCount})` : ""}
+                    </button>
+                  </>);
+                })()}
               </div>
             </div>
 
@@ -617,47 +732,114 @@ export default function App() {
               <button style={{ background: "transparent", border: "none", color: "#334155", cursor: "pointer", fontSize: 14, padding: "2px 6px", transition: "color 0.2s" }} onClick={() => setView("deck")} onMouseOver={e => e.target.style.color="#94a3b8"} onMouseOut={e => e.target.style.color="#334155"}>✕</button>
             </div>
 
-            <div style={{ marginBottom: 18 }}>
+            <div style={{ marginBottom: 18, display: "flex", alignItems: "center", gap: 8 }}>
               <span className="tag" style={{ background: `${activeDeckData.color}15`, color: activeDeckData.color, border: `1px solid ${activeDeckData.color}25` }}>
                 {activeDeckData.icon} {activeDeckData.name}
               </span>
+              <span className="tag" style={{ background: reviewMode === "mc" ? "#a78bfa18" : "#0ea5e918", color: reviewMode === "mc" ? "#a78bfa" : "#0ea5e9", border: reviewMode === "mc" ? "1px solid #a78bfa30" : "1px solid #0ea5e930" }}>
+                {reviewMode === "mc" ? "quiz" : "flip"}
+              </span>
             </div>
 
-            {/* Flip card */}
-            <div className="card-scene" style={{ height: 300, marginBottom: 20 }} onClick={() => setFlipped(f => !f)}>
-              <div className={`card-inner ${flipped ? "flipped" : ""}`}>
-                <div className="card-face" style={{ background: "#0a1220", border: "1px solid #1a2540", justifyContent: "space-between" }}>
-                  <div style={{ fontSize: 10, color: "#1e2d4a", letterSpacing: "0.12em", textTransform: "uppercase" }}>question</div>
-                  <div style={{ fontSize: 22, lineHeight: 1.6, color: "#e2e8f0", flex: 1, display: "flex", alignItems: "center", padding: "16px 0" }}>
+            {reviewMode === "flip" ? (
+              <>
+                {/* Flip card */}
+                <div className="card-scene" style={{ height: 300, marginBottom: 20 }} onClick={() => setFlipped(f => !f)}>
+                  <div className={`card-inner ${flipped ? "flipped" : ""}`}>
+                    <div className="card-face" style={{ background: "#0a1220", border: "1px solid #1a2540", justifyContent: "space-between" }}>
+                      <div style={{ fontSize: 10, color: "#1e2d4a", letterSpacing: "0.12em", textTransform: "uppercase" }}>question</div>
+                      <div style={{ fontSize: 22, lineHeight: 1.6, color: "#e2e8f0", flex: 1, display: "flex", alignItems: "center", padding: "16px 0" }}>
+                        <LatexRenderer text={current.front} serif={true} />
+                      </div>
+                      <div style={{ fontSize: 10, color: "#1e2d4a", letterSpacing: "0.08em" }}>tap to reveal ↗</div>
+                    </div>
+                    <div className="card-face card-back-face" style={{ background: "#080f1e", border: `1px solid ${activeDeckData.color}30`, justifyContent: "space-between" }}>
+                      <div style={{ fontSize: 10, color: activeDeckData.color, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.7 }}>answer</div>
+                      <div style={{ fontSize: 13, lineHeight: 1.9, color: "#b0bec5", flex: 1, overflowY: "auto", padding: "14px 0" }}>
+                        <LatexRenderer text={current.back} />
+                      </div>
+                      <div style={{ fontSize: 10, color: "#1e2d4a" }}>interval {current.interval}d · ef {current.ef.toFixed(2)} · rep {current.repetitions}</div>
+                    </div>
+                  </div>
+                </div>
+                {flipped ? (
+                  <div>
+                    <div style={{ fontSize: 10, color: "#334155", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12, textAlign: "center" }}>how well did you recall?</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8 }}>
+                      {QUALITY_BTNS.map(btn => (
+                        <button key={btn.q} className="rate-btn" onClick={() => handleRate(btn.q)} style={{ background: `${btn.color}15`, border: `1px solid ${btn.color}35`, color: btn.color }}>
+                          <div style={{ fontWeight: 500 }}>{btn.label}</div>
+                          <div style={{ fontSize: 10, opacity: 0.6, marginTop: 3 }}>{btn.sub}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ textAlign: "center", color: "#1e2d4a", fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "16px 0" }}>
+                    recall your answer, then tap the card
+                  </div>
+                )}
+              </>
+            ) : (
+              /* ── Multiple Choice Mode ── */
+              <div>
+                {/* Question */}
+                <div style={{ background: "#0a1220", border: "1px solid #1a2540", borderRadius: 14, padding: "28px 32px", marginBottom: 20, minHeight: 120, display: "flex", alignItems: "center" }}>
+                  <div style={{ fontSize: 20, lineHeight: 1.6, color: "#e2e8f0", width: "100%" }}>
                     <LatexRenderer text={current.front} serif={true} />
                   </div>
-                  <div style={{ fontSize: 10, color: "#1e2d4a", letterSpacing: "0.08em" }}>tap to reveal ↗</div>
                 </div>
-                <div className="card-face card-back-face" style={{ background: "#080f1e", border: `1px solid ${activeDeckData.color}30`, justifyContent: "space-between" }}>
-                  <div style={{ fontSize: 10, color: activeDeckData.color, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.7 }}>answer</div>
-                  <div style={{ fontSize: 13, lineHeight: 1.9, color: "#b0bec5", flex: 1, overflowY: "auto", padding: "14px 0" }}>
-                    <LatexRenderer text={current.back} />
-                  </div>
-                  <div style={{ fontSize: 10, color: "#1e2d4a" }}>interval {current.interval}d · ef {current.ef.toFixed(2)} · rep {current.repetitions}</div>
-                </div>
-              </div>
-            </div>
 
-            {flipped ? (
-              <div>
-                <div style={{ fontSize: 10, color: "#334155", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12, textAlign: "center" }}>how well did you recall?</div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8 }}>
-                  {QUALITY_BTNS.map(btn => (
-                    <button key={btn.q} className="rate-btn" onClick={() => handleRate(btn.q)} style={{ background: `${btn.color}15`, border: `1px solid ${btn.color}35`, color: btn.color }}>
-                      <div style={{ fontWeight: 500 }}>{btn.label}</div>
-                      <div style={{ fontSize: 10, opacity: 0.6, marginTop: 3 }}>{btn.sub}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div style={{ textAlign: "center", color: "#1e2d4a", fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "16px 0" }}>
-                recall your answer, then tap the card
+                {/* Choices */}
+                {mcState?.loading ? (
+                  <div style={{ textAlign: "center", padding: "32px 0", color: "#334155" }}>
+                    <span className="spin" style={{ fontSize: 20, marginRight: 10 }}>◉</span>
+                    <span style={{ fontSize: 12, letterSpacing: "0.08em" }}>generating choices...</span>
+                  </div>
+                ) : mcState?.error ? (
+                  <div style={{ textAlign: "center", padding: "24px", color: "#ef4444", fontSize: 12 }}>
+                    Failed to generate choices.
+                    <button className="btn-ghost" style={{ marginLeft: 12, fontSize: 11 }} onClick={() => loadMcChoices(current, getDeck(activeDeck).cards)}>retry</button>
+                  </div>
+                ) : mcState?.choices ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {mcState.choices.map((choice, idx) => {
+                      const isSelected = mcState.selected === idx;
+                      const isRevealed = mcState.selected !== null;
+                      const isCorrect = choice.correct;
+                      let bg = "#0a1220", border = "#1a2540", color = "#94a3b8";
+                      if (isRevealed && isCorrect) { bg = "#4ade8015"; border = "#4ade8050"; color = "#4ade80"; }
+                      else if (isRevealed && isSelected && !isCorrect) { bg = "#ef444415"; border = "#ef444450"; color = "#ef4444"; }
+                      return (
+                        <button key={idx} onClick={() => handleMcSelect(idx)}
+                          style={{ background: bg, border: `1px solid ${border}`, borderRadius: 10, padding: "16px 20px", textAlign: "left", cursor: isRevealed ? "default" : "pointer", transition: "all 0.2s", fontFamily: "'DM Mono', monospace", color, width: "100%" }}>
+                          <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                            <span style={{ width: 22, height: 22, borderRadius: "50%", border: `1px solid ${border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, flexShrink: 0, marginTop: 2, color }}>
+                              {isRevealed && isCorrect ? "✓" : isRevealed && isSelected ? "✗" : String.fromCharCode(65 + idx)}
+                            </span>
+                            <div style={{ fontSize: 13, lineHeight: 1.7 }}>
+                              <LatexRenderer text={choice.text} />
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                    {mcState.selected !== null && (
+                      <div style={{ marginTop: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontSize: 12, color: mcState.choices[mcState.selected].correct ? "#4ade80" : "#ef4444" }}>
+                          {mcState.choices[mcState.selected].correct ? "✓ Correct" : "✗ Incorrect"}
+                          <span style={{ color: "#334155", marginLeft: 8 }}>
+                            {sessionStats.reviewed + 1 > 0 ? `${sessionStats.correct + (mcState.choices[mcState.selected].correct ? 1 : 0)}/${sessionStats.reviewed + 1} this session` : ""}
+                          </span>
+                        </span>
+                        <button className="btn-primary" style={{ fontSize: 12, padding: "8px 22px" }}
+                          onClick={() => handleMcNext(mcState.choices[mcState.selected].correct)}>
+                          {qIdx + 1 >= queue.length ? "finish" : "next →"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : null}
               </div>
             )}
           </div>
