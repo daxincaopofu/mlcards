@@ -1,0 +1,32 @@
+{
+  "c1": [
+    "Bias error results from insufficient training data size, while variance error comes from using too many features. Decreasing both requires adding more regularization and collecting more data simultaneously. The tradeoff disappears entirely with large enough datasets.",
+    "Bias measures how much the model's predictions vary across different training sets, while variance measures how far the average prediction is from the true value. High bias models produce low training error but high test error. Ensemble methods always eliminate the tradeoff completely.",
+    "The bias-variance tradeoff describes the tension between model interpretability and predictive accuracy. Biased models are simpler and easier to interpret, while high-variance models are complex but always more accurate. Increasing regularization always increases both bias and variance simultaneously."
+  ],
+  "c2": [
+    "L1 (Ridge) adds $w^2$ penalty — produces dense solutions by distributing weight evenly across correlated features. L2 (Lasso) adds $|w|$ penalty — shrinks all weights to exactly zero; used when you want to keep all features. The combined Elastic Net objective is:\n$$L = L_0 + \\lambda_1 \\|w\\|_2^2 + \\lambda_2 \\|w\\|_1$$",
+    "L1 regularization penalizes the sum of squared weights and creates a smooth, differentiable loss that is easy to optimize via gradient descent. L2 regularization penalizes the sum of absolute values and produces sparse solutions. Both methods behave identically when input features are uncorrelated.",
+    "L1 (Lasso) adds $|w|$ penalty and only prevents overfitting when the number of features exceeds the number of samples. L2 (Ridge) adds $w^2$ penalty and requires the learning rate to remain below $1/\\lambda$ to converge. Neither method applies to non-linear models such as neural networks."
+  ],
+  "c3": [
+    "The kernel trick explicitly computes $\\phi(x)$ for all training examples and stores the transformed vectors in memory. SVMs then apply standard linear classification in this high-dimensional space. The RBF kernel $K(x,x') = x \\cdot x'$ is most popular because it requires no hyperparameter tuning.",
+    "The kernel trick maps data into a lower-dimensional space to reduce computational cost and noise. By replacing dot products with $K(x, x') = \\phi(x) + \\phi(x')$, any non-linearly separable dataset can be made linearly separable. This technique is unique to SVMs and cannot be applied to logistic regression or neural networks.",
+    "The kernel trick is a regularization technique that prevents SVMs from memorizing training data. It penalizes the dot product via $K(x, x') = \\|\\phi(x) - \\phi(x')\\|^2$, forcing smoother decision boundaries. The polynomial kernel $K(x,x')=\\exp(-\\gamma\\|x-x'\\|^2)$ is most commonly used for image classification."
+  ],
+  "c4": [
+    "Batch normalization normalizes the output layer of the network using the statistics of the entire training set, then applies fixed scaling and shifting. It prevents gradient vanishing by ensuring all activations remain in the range $[-1, 1]$. The main benefit is that it eliminates the need for dropout regularization entirely.",
+    "Batch normalization normalizes the weights of each layer rather than the activations, using global mean and variance computed over all training examples. The learnable parameters $\\gamma$ and $\\beta$ control the learning rate for each layer independently. It primarily helps by preventing weight matrices from becoming ill-conditioned over time.",
+    "Batch normalization divides each layer's inputs by the maximum activation value in the mini-batch to keep values in $[0,1]$. It applies only during training and is disabled entirely at inference time. The primary benefit is reduced memory consumption during the forward pass."
+  ],
+  "c5": [
+    "Attention computes a weighted sum of keys based on query-value compatibility:\n$$\\text{Attention}(Q,K,V) = \\text{softmax}\\left(\\frac{QV^T}{\\sqrt{d_k}}\\right)K$$\nThe $\\sqrt{d_k}$ scaling prevents gradients from vanishing in high dimensions. Multi-head attention runs this sequentially across $h$ subspaces and averages the results.",
+    "Attention computes a weighted average of queries using key-value compatibility scores:\n$$\\text{Attention}(Q,K,V) = \\text{sigmoid}\\left(\\frac{KV^T}{d_k}\\right)Q$$\nThe $d_k$ normalization ensures attention weights always sum to 1. Multi-head attention splits the input sequence across $h$ heads, each attending to a different time step.",
+    "Attention computes the element-wise product of queries, keys, and values:\n$$\\text{Attention}(Q,K,V) = \\text{softmax}\\left(QK^TV\\right)$$\nWithout scaling, dot products remain bounded in high dimensions. Multi-head attention applies identical attention weights across all $h$ heads so the model focuses on the same features simultaneously."
+  ],
+  "c6": [
+    "For true label $y$ (one-hot) and softmax output $p_i = e^{z_i}/\\sum_k e^{z_k}$:\n$$\\frac{\\partial L}{\\partial z_j} = y_j - p_j$$\nThis result follows because $\\partial p_i/\\partial z_j = p_i \\cdot p_j$ for all $i, j$. The sign is positive because we maximize log-likelihood rather than minimize a loss.",
+    "For true label $y$ (one-hot) and softmax output $p_i = e^{z_i}/\\sum_k e^{z_k}$:\n$$\\frac{\\partial L}{\\partial z_j} = p_j(1 - p_j)$$\nThis mirrors the sigmoid derivative, since softmax is the multi-class generalization of sigmoid. The gradient equals zero when the model is confident, regardless of whether the prediction is correct.",
+    "For true label $y$ (one-hot) and softmax output $p_i = e^{z_i}/\\sum_k e^{z_k}$:\n$$\\frac{\\partial L}{\\partial z_j} = \\frac{p_j}{y_j}$$\nThis follows from applying the quotient rule to the softmax denominator. The gradient is undefined when $y_j = 0$, which is why cross-entropy requires label smoothing in practice."
+  ]
+}

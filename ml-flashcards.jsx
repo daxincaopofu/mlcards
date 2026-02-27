@@ -92,26 +92,40 @@ function initCard(card) {
 }
 
 // ── Storage helpers ───────────────────────────────────────────────────────────
+// Adapter: use window.storage (artifact env) or localStorage (local dev)
+const storage = window.storage ?? {
+  get: async (key) => { const v = localStorage.getItem(key); return v ? { value: v } : null; },
+  set: async (key, value) => { localStorage.setItem(key, value); },
+};
+
 async function loadDecks() {
   try {
-    const r = await window.storage.get("mlcards:decks");
+    const r = await storage.get("mlcards:decks");
     return r ? JSON.parse(r.value) : null;
   } catch { return null; }
 }
 async function saveDecks(decks) {
-  try { await window.storage.set("mlcards:decks", JSON.stringify(decks)); } catch {}
+  try { await storage.set("mlcards:decks", JSON.stringify(decks)); } catch {}
 }
 
 // ── Distractor Cache ──────────────────────────────────────────────────────────
 // Shape: { [cardId]: string[] }  (3 distractor strings per card)
 async function loadDistractorCache() {
+  // Load bundled seed distractors (committed to repo, no API call needed)
+  let bundled = {};
   try {
-    const r = await window.storage.get("mlcards:distractors");
-    return r ? JSON.parse(r.value) : {};
-  } catch { return {}; }
+    const res = await fetch("/distractors.json");
+    if (res.ok) bundled = await res.json();
+  } catch {}
+  // Merge with user's persisted cache; user entries take priority
+  try {
+    const r = await storage.get("mlcards:distractors");
+    const saved = r ? JSON.parse(r.value) : {};
+    return { ...bundled, ...saved };
+  } catch { return bundled; }
 }
 async function saveDistractorCache(cache) {
-  try { await window.storage.set("mlcards:distractors", JSON.stringify(cache)); } catch {}
+  try { await storage.set("mlcards:distractors", JSON.stringify(cache)); } catch {}
 }
 function exportDistractorCache(cache) {
   const json = JSON.stringify(cache, null, 2);
