@@ -102,6 +102,37 @@ async function saveDecks(decks) {
   try { await window.storage.set("mlcards:decks", JSON.stringify(decks)); } catch {}
 }
 
+// ── Distractor Cache ──────────────────────────────────────────────────────────
+// Shape: { [cardId]: string[] }  (3 distractor strings per card)
+async function loadDistractorCache() {
+  try {
+    const r = await window.storage.get("mlcards:distractors");
+    return r ? JSON.parse(r.value) : {};
+  } catch { return {}; }
+}
+async function saveDistractorCache(cache) {
+  try { await window.storage.set("mlcards:distractors", JSON.stringify(cache)); } catch {}
+}
+function exportDistractorCache(cache) {
+  const json = JSON.stringify(cache, null, 2);
+  const blob = new Blob([json], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "mlcards-distractors.json"; a.click();
+  URL.revokeObjectURL(url);
+}
+function importDistractorFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try { resolve(JSON.parse(e.target.result)); }
+      catch { reject(new Error("Invalid JSON")); }
+    };
+    reader.onerror = () => reject(new Error("Read failed"));
+    reader.readAsText(file);
+  });
+}
+
 // ── Seed data ─────────────────────────────────────────────────────────────────
 const SEED_DECKS = [
   {
@@ -235,6 +266,9 @@ export default function App() {
   const [doneAnim, setDoneAnim] = useState(false);
   // MC state: null | { choices: [{text,correct}], selected: number|null, loading: bool }
   const [mcState, setMcState] = useState(null);
+  // Distractor cache: { [cardId]: string[] } — persisted to JSON file
+  const [distractorCache, setDistractorCache] = useState({});
+  const importFileRef = useRef(null);
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState("");
   const [genTopic, setGenTopic] = useState("");
@@ -247,9 +281,10 @@ export default function App() {
   const [newDeckIcon, setNewDeckIcon] = useState(DECK_ICONS[0]);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
-  // Load persisted decks
+  // Load persisted decks + distractor cache
   useEffect(() => {
     loadDecks().then(d => setDecks(d || SEED_DECKS));
+    loadDistractorCache().then(c => setDistractorCache(c));
   }, []);
 
   // Persist on change
@@ -280,18 +315,31 @@ export default function App() {
     if (mode === "mc") loadMcChoices(sorted[0], deck.cards);
   }
 
-  async function loadMcChoices(card, allCards) {
-    setMcState({ choices: null, selected: null, loading: true });
+  async function loadMcChoices(card, allCards, forceRegenerate = false) {
+    // Check cache first (unless forced regen)
+    const cached = !forceRegenerate && distractorCache[card.id];
+    if (cached) {
+      const choices = shuffle([
+        { text: card.back, correct: true },
+        ...cached.map(d => ({ text: d, correct: false }))
+      ]);
+      setMcState({ choices, selected: null, loading: false, cardId: card.id });
+      return;
+    }
+    setMcState({ choices: null, selected: null, loading: true, cardId: card.id });
     try {
       const distractors = await generateDistractors(card, allCards);
+      // Persist to cache
+      const newCache = { ...distractorCache, [card.id]: distractors };
+      setDistractorCache(newCache);
+      saveDistractorCache(newCache);
       const choices = shuffle([
         { text: card.back, correct: true },
         ...distractors.map(d => ({ text: d, correct: false }))
       ]);
-      setMcState({ choices, selected: null, loading: false });
+      setMcState({ choices, selected: null, loading: false, cardId: card.id });
     } catch {
-      // Fall back to flip mode if generation fails
-      setMcState({ choices: null, selected: null, loading: false, error: true });
+      setMcState({ choices: null, selected: null, loading: false, error: true, cardId: card.id });
     }
   }
 
@@ -323,7 +371,7 @@ export default function App() {
       const deck = getDeck(activeDeck);
       setMcState(null);
       setQIdx(i => i + 1);
-      loadMcChoices(nextCard, deck.cards);
+      loadMcChoices(nextCard, deck.cards, false);
     }
   }
 
@@ -625,9 +673,14 @@ export default function App() {
                         <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{card.front}</div>
                         <div style={{ fontSize: 10, color: "#334155", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{card.back}</div>
                       </div>
-                      <div style={{ flexShrink: 0, textAlign: "right" }}>
+                      <div style={{ flexShrink: 0, textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
                         <div style={{ fontSize: 10, color: due ? "#f97316" : "#334155" }}>{due ? "due" : `in ${daysUntil}d`}</div>
-                        <div style={{ fontSize: 10, color: "#1e2d4a", marginTop: 2 }}>ef {card.ef.toFixed(1)}</div>
+                        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                          {distractorCache[card.id] && (
+                            <span title="distractors cached" style={{ fontSize: 9, color: "#4ade8060", letterSpacing: "0.05em" }}>◆ mc</span>
+                          )}
+                          <span style={{ fontSize: 10, color: "#1e2d4a" }}>ef {card.ef.toFixed(1)}</span>
+                        </div>
                       </div>
                     </div>
                   );
@@ -636,6 +689,43 @@ export default function App() {
             )}
 
             <div style={{ marginTop: 32, paddingTop: 24, borderTop: "1px solid #0f1a2e" }}>
+              {/* Distractor cache management */}
+              {(() => {
+                const deckCards = activeDeckData.cards;
+                const cachedCount = deckCards.filter(c => distractorCache[c.id]).length;
+                const totalCount = deckCards.length;
+                return totalCount > 0 ? (
+                  <div style={{ marginBottom: 20 }}>
+                    <div style={{ fontSize: 10, color: "#475569", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>quiz distractors</div>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                      <span style={{ fontSize: 11, color: cachedCount === totalCount ? "#4ade80" : "#f97316" }}>
+                        {cachedCount}/{totalCount} cached
+                      </span>
+                      <button className="btn-ghost" style={{ fontSize: 11 }}
+                        onClick={() => exportDistractorCache(distractorCache)}>
+                        ↓ export distractors.json
+                      </button>
+                      <button className="btn-ghost" style={{ fontSize: 11 }}
+                        onClick={() => importFileRef.current?.click()}>
+                        ↑ import distractors.json
+                      </button>
+                      <input ref={importFileRef} type="file" accept=".json" style={{ display: "none" }}
+                        onChange={async e => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          try {
+                            const imported = await importDistractorFile(file);
+                            const merged = { ...distractorCache, ...imported };
+                            setDistractorCache(merged);
+                            saveDistractorCache(merged);
+                          } catch { alert("Failed to import: invalid JSON file"); }
+                          e.target.value = "";
+                        }} />
+                    </div>
+                  </div>
+                ) : null;
+              })()}
+
               {deleteConfirm === activeDeckData.id ? (
                 <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
                   <span style={{ fontSize: 12, color: "#ef4444" }}>Delete this deck?</span>
@@ -799,7 +889,7 @@ export default function App() {
                 ) : mcState?.error ? (
                   <div style={{ textAlign: "center", padding: "24px", color: "#ef4444", fontSize: 12 }}>
                     Failed to generate choices.
-                    <button className="btn-ghost" style={{ marginLeft: 12, fontSize: 11 }} onClick={() => loadMcChoices(current, getDeck(activeDeck).cards)}>retry</button>
+                    <button className="btn-ghost" style={{ marginLeft: 12, fontSize: 11 }} onClick={() => loadMcChoices(current, getDeck(activeDeck).cards, true)}>retry</button>
                   </div>
                 ) : mcState?.choices ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -832,10 +922,17 @@ export default function App() {
                             {sessionStats.reviewed + 1 > 0 ? `${sessionStats.correct + (mcState.choices[mcState.selected].correct ? 1 : 0)}/${sessionStats.reviewed + 1} this session` : ""}
                           </span>
                         </span>
-                        <button className="btn-primary" style={{ fontSize: 12, padding: "8px 22px" }}
-                          onClick={() => handleMcNext(mcState.choices[mcState.selected].correct)}>
-                          {qIdx + 1 >= queue.length ? "finish" : "next →"}
-                        </button>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <button className="btn-ghost" style={{ fontSize: 11 }}
+                            onClick={() => loadMcChoices(current, getDeck(activeDeck).cards, true)}
+                            title="Regenerate distractors for this card">
+                            ↺ regen
+                          </button>
+                          <button className="btn-primary" style={{ fontSize: 12, padding: "8px 22px" }}
+                            onClick={() => handleMcNext(mcState.choices[mcState.selected].correct)}>
+                            {qIdx + 1 >= queue.length ? "finish" : "next →"}
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
