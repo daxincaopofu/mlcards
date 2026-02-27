@@ -168,6 +168,15 @@ const SEED_DECKS = [
 ];
 
 // ── AI Generation ─────────────────────────────────────────────────────────────
+function anthropicHeaders() {
+  const key = typeof import.meta !== "undefined" && import.meta.env?.VITE_ANTHROPIC_API_KEY;
+  return {
+    "Content-Type": "application/json",
+    "anthropic-version": "2023-06-01",
+    "anthropic-dangerous-direct-browser-access": "true",
+    ...(key ? { "x-api-key": key } : {}),
+  };
+}
 async function generateCards(topic, count, deckName) {
   const prompt = `You are an expert ML educator. Generate exactly ${count} high-quality flashcards about "${topic}" for the deck "${deckName}".
 
@@ -192,7 +201,7 @@ Requirements:
 
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: anthropicHeaders(),
     body: JSON.stringify({
       model: "claude-sonnet-4-20250514",
       max_tokens: 1000,
@@ -233,7 +242,7 @@ Return ONLY valid JSON, no other text:
 
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: anthropicHeaders(),
     body: JSON.stringify({
       model: "claude-sonnet-4-20250514",
       max_tokens: 1000,
