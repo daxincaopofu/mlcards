@@ -1,0 +1,62 @@
+{
+  "c4": [
+    { "title": "Batch Normalization (Ioffe & Szegedy, 2015)", "url": "https://arxiv.org/abs/1502.03167", "type": "paper" },
+    { "title": "Batch normalization — Wikipedia", "url": "https://en.wikipedia.org/wiki/Batch_normalization", "type": "wiki" }
+  ],
+  "c5": [
+    { "title": "Attention Is All You Need (Vaswani et al., 2017)", "url": "https://arxiv.org/abs/1706.03762", "type": "paper" },
+    { "title": "The Illustrated Transformer — Jay Alammar", "url": "https://jalammar.github.io/illustrated-transformer/", "type": "blog" },
+    { "title": "Transformer (deep learning) — Wikipedia", "url": "https://en.wikipedia.org/wiki/Transformer_(deep_learning_architecture)", "type": "wiki" }
+  ],
+  "c6": [
+    { "title": "Linear Classification & Softmax — CS231n", "url": "https://cs231n.github.io/linear-classify/", "type": "notes" },
+    { "title": "Cross-entropy — Wikipedia", "url": "https://en.wikipedia.org/wiki/Cross-entropy", "type": "wiki" },
+    { "title": "Softmax function — Wikipedia", "url": "https://en.wikipedia.org/wiki/Softmax_function", "type": "wiki" }
+  ],
+  "dl-1": [
+    { "title": "Deep Residual Learning for Image Recognition (He et al., 2015)", "url": "https://arxiv.org/abs/1512.03385", "type": "paper" },
+    { "title": "Vanishing gradient problem — Wikipedia", "url": "https://en.wikipedia.org/wiki/Vanishing_gradient_problem", "type": "wiki" },
+    { "title": "Residual neural network — Wikipedia", "url": "https://en.wikipedia.org/wiki/Residual_neural_network", "type": "wiki" }
+  ],
+  "dl-2": [
+    { "title": "Dropout: A Simple Way to Prevent Neural Networks from Overfitting (Srivastava et al., 2014)", "url": "https://jmlr.org/papers/v15/srivastava14a.html", "type": "paper" },
+    { "title": "Dropout (neural networks) — Wikipedia", "url": "https://en.wikipedia.org/wiki/Dropout_(neural_networks)", "type": "wiki" }
+  ],
+  "dl-3": [
+    { "title": "Understanding LSTMs — Christopher Olah", "url": "https://colah.github.io/posts/2015-08-Understanding-LSTMs/", "type": "blog" },
+    { "title": "Learning Phrase Representations using RNN Encoder–Decoder (Cho et al., 2014) — GRU paper", "url": "https://arxiv.org/abs/1406.1078", "type": "paper" },
+    { "title": "Long short-term memory — Wikipedia", "url": "https://en.wikipedia.org/wiki/Long_short-term_memory", "type": "wiki" }
+  ],
+  "dl-4": [
+    { "title": "Attention Is All You Need (Vaswani et al., 2017)", "url": "https://arxiv.org/abs/1706.03762", "type": "paper" },
+    { "title": "The Illustrated Transformer — Jay Alammar", "url": "https://jalammar.github.io/illustrated-transformer/", "type": "blog" }
+  ],
+  "dl-5": [
+    { "title": "Distilling the Knowledge in a Neural Network (Hinton et al., 2015)", "url": "https://arxiv.org/abs/1503.02531", "type": "paper" },
+    { "title": "Knowledge distillation — Wikipedia", "url": "https://en.wikipedia.org/wiki/Knowledge_distillation", "type": "wiki" }
+  ],
+  "dl-6": [
+    { "title": "Generative model — Wikipedia", "url": "https://en.wikipedia.org/wiki/Generative_model", "type": "wiki" },
+    { "title": "Discriminative model — Wikipedia", "url": "https://en.wikipedia.org/wiki/Discriminative_model", "type": "wiki" },
+    { "title": "From GAN to WGAN — Lil'Log", "url": "https://lilianweng.github.io/posts/2017-08-20-gan/", "type": "blog" }
+  ],
+  "dl-7": [
+    { "title": "Auto-Encoding Variational Bayes (Kingma & Welling, 2013)", "url": "https://arxiv.org/abs/1312.6114", "type": "paper" },
+    { "title": "From Autoencoder to Beta-VAE — Lil'Log", "url": "https://lilianweng.github.io/posts/2018-08-12-vae/", "type": "blog" },
+    { "title": "Variational autoencoder — Wikipedia", "url": "https://en.wikipedia.org/wiki/Variational_autoencoder", "type": "wiki" }
+  ],
+  "dl-8": [
+    { "title": "Layer Normalization (Ba et al., 2016)", "url": "https://arxiv.org/abs/1607.06450", "type": "paper" },
+    { "title": "Batch Normalization (Ioffe & Szegedy, 2015)", "url": "https://arxiv.org/abs/1502.03167", "type": "paper" },
+    { "title": "Layer normalization — Wikipedia", "url": "https://en.wikipedia.org/wiki/Layer_normalization", "type": "wiki" }
+  ],
+  "dl-9": [
+    { "title": "On the difficulty of training RNNs (Pascanu et al., 2013)", "url": "https://arxiv.org/abs/1211.5063", "type": "paper" },
+    { "title": "Vanishing gradient problem — Wikipedia", "url": "https://en.wikipedia.org/wiki/Vanishing_gradient_problem", "type": "wiki" }
+  ],
+  "dl-10": [
+    { "title": "LoRA: Low-Rank Adaptation of Large Language Models (Hu et al., 2021)", "url": "https://arxiv.org/abs/2106.09685", "type": "paper" },
+    { "title": "BERT: Pre-training of Deep Bidirectional Transformers (Devlin et al., 2018)", "url": "https://arxiv.org/abs/1810.04805", "type": "paper" },
+    { "title": "Transfer learning — Wikipedia", "url": "https://en.wikipedia.org/wiki/Transfer_learning", "type": "wiki" }
+  ]
+}

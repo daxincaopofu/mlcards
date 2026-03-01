@@ -343,12 +343,18 @@ export default function App() {
   const [newDeckColor, setNewDeckColor] = useState(DECK_COLORS[0]);
   const [newDeckIcon, setNewDeckIcon] = useState(DECK_ICONS[0]);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [cardResources, setCardResources] = useState({});
+  const [learnMoreOpen, setLearnMoreOpen] = useState(false);
 
-  // Load persisted decks + distractor cache
+  // Load persisted decks + distractor cache + bundled resources
   useEffect(() => {
     loadDecks().then(d => setDecks(d || SEED_DECKS));
     loadDistractorCache().then(c => setDistractorCache(c));
+    fetch("/resources.json").then(r => r.ok ? r.json() : {}).then(setCardResources).catch(() => {});
   }, []);
+
+  // Reset Learn More when the card changes
+  useEffect(() => { setLearnMoreOpen(false); }, [qIdx]);
 
   // Persist on change
   useEffect(() => {
@@ -915,6 +921,26 @@ export default function App() {
                     </div>
                   </div>
                 </div>
+                {flipped && cardResources[current.id]?.length > 0 && (
+                  <div style={{ marginBottom: 14 }}>
+                    <button onClick={() => setLearnMoreOpen(o => !o)} style={{ background: "none", border: "1px solid #1a2540", borderRadius: 6, color: "#64748b", fontSize: 11, padding: "5px 12px", cursor: "pointer", letterSpacing: "0.06em", width: "100%" }}>
+                      {learnMoreOpen ? "▾ learn more" : "▸ learn more"}
+                    </button>
+                    {learnMoreOpen && (
+                      <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+                        {cardResources[current.id].map((r, i) => {
+                          const typeColor = { paper: "#60a5fa", blog: "#4ade80", wiki: "#a78bfa", notes: "#fb923c" }[r.type] ?? "#64748b";
+                          return (
+                            <a key={i} href={r.url} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 8, background: "#0a1220", border: "1px solid #1a2540", borderRadius: 6, padding: "7px 10px", textDecoration: "none" }}>
+                              <span style={{ fontSize: 9, background: `${typeColor}20`, color: typeColor, border: `1px solid ${typeColor}40`, borderRadius: 4, padding: "2px 6px", letterSpacing: "0.08em", flexShrink: 0 }}>{r.type}</span>
+                              <span style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.4 }}>{r.title}</span>
+                            </a>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
                 {flipped ? (
                   <div>
                     <div style={{ fontSize: 10, color: "#334155", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12, textAlign: "center" }}>how well did you recall?</div>
