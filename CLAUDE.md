@@ -80,6 +80,49 @@ App start → fetch distractors.json + resources.json → merge with storage
 
 In the Review (flip) view, after the card is flipped, a `▸ learn more` toggle appears if `cardResources[current.id]` has entries. Expanding it shows links with color-coded type badges. `learnMoreOpen` resets to `false` via a `useEffect` on `qIdx`.
 
+### Theming (Light / Dark mode)
+
+The app supports light and dark mode via a `lightMode` state variable (persisted to `localStorage` under `mlcards:theme`).
+
+A `themeVars` object maps CSS custom property names (`--th-*`) to hex/rgba values for each mode. The root `<div>` spreads `...themeVars` as inline style, making all vars available to children. The embedded `<style>` block and JSX inline styles use `var(--th-*)` exclusively — no hardcoded theme colors in markup.
+
+Key variable groups:
+- `--th-bg`, `--th-bg-card`, `--th-bg-card-alt`, `--th-bg-nav`, `--th-bg-hover`, `--th-bg-active`, `--th-bg-overlay`
+- `--th-border`, `--th-border-soft`, `--th-border-nav`, `--th-border-focus`
+- `--th-text`, `--th-text-answer`, `--th-text-muted`, `--th-text-dim`, `--th-text-subtle`, `--th-text-faint`, `--th-text-ghost`
+- `--th-grid`, `--th-scrollbar`, `--th-tooltip-bg`, `--th-tooltip-color`, `--th-glow1`, `--th-glow2`
+
+Semantic colors (green for correct/mastered, red for errors/delete, orange for due, brand `#0ea5e9` accent) remain as hardcoded hex values since they are not theme-dependent.
+
 ### Styling
 
-Embedded CSS only (no framework). Dark theme (`#060a10` bg). Fonts from Google Fonts: DM Mono + Cormorant Garamond. 3D card flip via CSS `perspective` + `rotateY(180deg)`. Responsive grid with `minmax()`.
+Embedded CSS only (no framework). Fonts from Google Fonts: DM Mono + Cormorant Garamond. 3D card flip via CSS `perspective` + `rotateY(180deg)`. Responsive grid with `minmax()`.
+
+## Potential Refactors
+
+These are architectural improvements worth considering if the app grows beyond its current scope:
+
+### 1. Split the monolith into modules
+`ml-flashcards.jsx` is ~1100 lines. Natural split points:
+- `utils/sm2.js` — SM-2 algorithm (pure function, no React)
+- `utils/storage.js` — storage adapter + distractor cache helpers
+- `utils/api.js` — `anthropicHeaders()`, `generateCards()`, `generateDistractors()`
+- `constants/seeds.js` — `SEED_DECKS`, `DECK_COLORS`, `QUALITY_BTNS`
+- `components/LatexRenderer.jsx` — KaTeX loading + rendering
+- `components/FlipCard.jsx` — review flip view
+- `components/MCView.jsx` — multiple choice view
+
+### 2. Replace inline styles with CSS classes
+Many JSX elements use inline `style={{...}}` with `var(--th-*)` values. Moving these to named CSS classes (in the `<style>` block) would reduce JSX noise and make hover/active states manageable without `onMouseOver`/`onMouseOut` handlers.
+
+### 3. Group related state
+The generate form has 6 separate `useState` hooks (`genTopic`, `genCount`, `genDeckId`, `genDeckName`, `generating`, `genError`). Consolidating into a single `genState` object with `useReducer` would simplify the form logic.
+
+### 4. Bundle KaTeX instead of CDN load
+KaTeX is currently loaded dynamically from CDN into `window.katex`. Installing `katex` as an npm dependency would eliminate the CDN dependency and async loading state.
+
+### 5. Smarter seed deck initialization
+New seed decks are only visible to users with empty storage. A migration pattern (check `deck-N` IDs against existing decks, seed any missing ones) would let existing users receive new content.
+
+### 6. Extend `resources.json` to all decks
+Currently only the Deep Learning deck has "Learn More" links. Classical ML and Probability & Statistics decks have no entries in `public/resources.json`.

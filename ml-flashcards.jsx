@@ -345,6 +345,35 @@ export default function App() {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [cardResources, setCardResources] = useState({});
   const [learnMoreOpen, setLearnMoreOpen] = useState(false);
+  const [lightMode, setLightMode] = useState(() => localStorage.getItem("mlcards:theme") === "light");
+
+  const toggleTheme = () => setLightMode(prev => {
+    const next = !prev;
+    localStorage.setItem("mlcards:theme", next ? "light" : "dark");
+    return next;
+  });
+
+  const themeVars = lightMode ? {
+    "--th-bg": "#f0f4f8", "--th-bg-card": "#ffffff", "--th-bg-card-alt": "#f3f7fb",
+    "--th-bg-nav": "rgba(240,244,248,0.92)", "--th-bg-hover": "#e4eaf2", "--th-bg-active": "#dbeafe",
+    "--th-bg-overlay": "rgba(240,244,248,0.97)",
+    "--th-border": "#c8d5e6", "--th-border-soft": "#dde6f0", "--th-border-nav": "#dde6f0", "--th-border-focus": "#93c5fd",
+    "--th-text": "#0f172a", "--th-text-answer": "#374151", "--th-text-muted": "#4b5563",
+    "--th-text-dim": "#6b7280", "--th-text-subtle": "#6b7280", "--th-text-faint": "#94a3b8", "--th-text-ghost": "#c8d5e6",
+    "--th-grid": "rgba(100,116,139,0.08)", "--th-scrollbar": "#c8d5e6",
+    "--th-tooltip-bg": "#e2e8f0", "--th-tooltip-color": "#334155",
+    "--th-glow1": "rgba(14,165,233,0.07)", "--th-glow2": "rgba(244,114,182,0.05)",
+  } : {
+    "--th-bg": "#060a10", "--th-bg-card": "#0a1220", "--th-bg-card-alt": "#080f1e",
+    "--th-bg-nav": "rgba(6,10,16,0.9)", "--th-bg-hover": "#0d1321", "--th-bg-active": "#0d1a2e",
+    "--th-bg-overlay": "rgba(6,10,16,0.96)",
+    "--th-border": "#1e2d4a", "--th-border-soft": "#1a2540", "--th-border-nav": "#0f1a2e", "--th-border-focus": "#2d4a6e",
+    "--th-text": "#e2e8f0", "--th-text-answer": "#b0bec5", "--th-text-muted": "#94a3b8",
+    "--th-text-dim": "#64748b", "--th-text-subtle": "#475569", "--th-text-faint": "#334155", "--th-text-ghost": "#1e2d4a",
+    "--th-grid": "rgba(30,45,74,0.15)", "--th-scrollbar": "#1e2d4a",
+    "--th-tooltip-bg": "#1e2d4a", "--th-tooltip-color": "#94a3b8",
+    "--th-glow1": "rgba(14,165,233,0.05)", "--th-glow2": "rgba(244,114,182,0.04)",
+  };
 
   // Load persisted decks + distractor cache + bundled resources
   useEffect(() => {
@@ -511,7 +540,7 @@ export default function App() {
   const activeDeckData = activeDeck ? getDeck(activeDeck) : null;
 
   if (!decks) return (
-    <div style={{ minHeight: "100vh", background: "#060a10", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'DM Mono', monospace", color: "#475569" }}>
+    <div style={{ minHeight: "100vh", background: "var(--th-bg)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'DM Mono', monospace", color: "var(--th-text-subtle)", ...themeVars }}>
       <div style={{ textAlign: "center" }}>
         <div style={{ fontSize: 32, marginBottom: 12, animation: "spin 1.5s linear infinite", display: "inline-block" }}>◉</div>
         <div style={{ fontSize: 12, letterSpacing: "0.1em" }}>loading your decks...</div>
@@ -520,11 +549,11 @@ export default function App() {
   );
 
   return (
-    <div style={{ minHeight: "100vh", background: "#060a10", fontFamily: "'DM Mono', monospace", color: "#e2e8f0" }}>
+    <div style={{ minHeight: "100vh", background: "var(--th-bg)", fontFamily: "'DM Mono', monospace", color: "var(--th-text)", ...themeVars }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        ::-webkit-scrollbar { width: 3px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: #1e2d4a; border-radius: 2px; }
+        ::-webkit-scrollbar { width: 3px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--th-scrollbar); border-radius: 2px; }
         input, textarea, select { outline: none; }
         .card-scene { perspective: 1400px; cursor: pointer; }
         .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s cubic-bezier(0.4,0,0.2,1); transform-style: preserve-3d; }
@@ -534,32 +563,32 @@ export default function App() {
         .btn-primary { background: linear-gradient(135deg, #1d4ed8, #0ea5e9); border: none; color: white; padding: 11px 28px; border-radius: 8px; font-family: 'DM Mono', monospace; font-size: 13px; cursor: pointer; transition: all 0.2s; letter-spacing: 0.04em; }
         .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(14,165,233,0.25); }
         .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: none; }
-        .btn-ghost { background: transparent; border: 1px solid #1e2d4a; color: #64748b; padding: 8px 18px; border-radius: 7px; font-family: 'DM Mono', monospace; font-size: 12px; cursor: pointer; transition: all 0.2s; }
-        .btn-ghost:hover { border-color: #2d4a6e; color: #94a3b8; background: #0d1321; }
+        .btn-ghost { background: transparent; border: 1px solid var(--th-border); color: var(--th-text-dim); padding: 8px 18px; border-radius: 7px; font-family: 'DM Mono', monospace; font-size: 12px; cursor: pointer; transition: all 0.2s; }
+        .btn-ghost:hover { border-color: var(--th-border-focus); color: var(--th-text-muted); background: var(--th-bg-hover); }
         .btn-danger { background: transparent; border: 1px solid #ef444430; color: #ef4444; padding: 7px 16px; border-radius: 7px; font-family: 'DM Mono', monospace; font-size: 11px; cursor: pointer; transition: all 0.2s; }
         .btn-danger:hover { background: #ef444415; }
-        .input-field { background: #0a1220; border: 1px solid #1e2d4a; border-radius: 8px; padding: 10px 14px; color: #e2e8f0; font-family: 'DM Mono', monospace; font-size: 13px; transition: border-color 0.2s; width: 100%; }
-        .input-field:focus { border-color: #2d4a6e; }
-        .input-field::placeholder { color: #334155; }
+        .input-field { background: var(--th-bg-card); border: 1px solid var(--th-border); border-radius: 8px; padding: 10px 14px; color: var(--th-text); font-family: 'DM Mono', monospace; font-size: 13px; transition: border-color 0.2s; width: 100%; }
+        .input-field:focus { border-color: var(--th-border-focus); }
+        .input-field::placeholder { color: var(--th-text-faint); }
         .rate-btn { border: none; border-radius: 8px; padding: 10px 0; cursor: pointer; font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500; transition: transform 0.15s, filter 0.15s; }
         .rate-btn:hover { transform: translateY(-2px); filter: brightness(1.2); }
         .rate-btn:active { transform: scale(0.97); }
-        .deck-card { background: #0a1220; border: 1px solid #1a2540; border-radius: 14px; padding: 22px; cursor: pointer; transition: all 0.22s; position: relative; overflow: hidden; }
-        .deck-card:hover { border-color: #2d4a6e; transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
-        .grid-bg { position: fixed; inset: 0; pointer-events: none; background-image: linear-gradient(rgba(30,45,74,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(30,45,74,0.15) 1px, transparent 1px); background-size: 48px 48px; }
+        .deck-card { background: var(--th-bg-card); border: 1px solid var(--th-border-soft); border-radius: 14px; padding: 22px; cursor: pointer; transition: all 0.22s; position: relative; overflow: hidden; }
+        .deck-card:hover { border-color: var(--th-border-focus); transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.15); }
+        .grid-bg { position: fixed; inset: 0; pointer-events: none; background-image: linear-gradient(var(--th-grid) 1px, transparent 1px), linear-gradient(90deg, var(--th-grid) 1px, transparent 1px); background-size: 48px 48px; }
         .glow-orb { position: fixed; border-radius: 50%; pointer-events: none; }
-        .nav-item { background: transparent; border: none; color: #475569; padding: 7px 16px; border-radius: 6px; font-family: 'DM Mono', monospace; font-size: 11px; cursor: pointer; transition: all 0.2s; letter-spacing: 0.06em; text-transform: uppercase; }
-        .nav-item:hover { color: #94a3b8; background: #0d1321; }
-        .nav-item.active { color: #0ea5e9; background: #0d1a2e; }
-        .done-overlay { position: fixed; inset: 0; background: rgba(6,10,16,0.96); display: flex; align-items: center; justify-content: center; z-index: 200; animation: fadeIn 0.3s; }
+        .nav-item { background: transparent; border: none; color: var(--th-text-subtle); padding: 7px 16px; border-radius: 6px; font-family: 'DM Mono', monospace; font-size: 11px; cursor: pointer; transition: all 0.2s; letter-spacing: 0.06em; text-transform: uppercase; }
+        .nav-item:hover { color: var(--th-text-muted); background: var(--th-bg-hover); }
+        .nav-item.active { color: #0ea5e9; background: var(--th-bg-active); }
+        .done-overlay { position: fixed; inset: 0; background: var(--th-bg-overlay); display: flex; align-items: center; justify-content: center; z-index: 200; animation: fadeIn 0.3s; }
         .color-swatch { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; transition: transform 0.15s; border: 2px solid transparent; flex-shrink: 0; }
         .color-swatch:hover { transform: scale(1.15); }
         .color-swatch.selected { border-color: white; transform: scale(1.1); }
-        .icon-swatch { width: 34px; height: 34px; border-radius: 8px; background: #0a1220; border: 1px solid #1e2d4a; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; transition: all 0.15s; }
-        .icon-swatch:hover { border-color: #2d4a6e; background: #0d1a2e; }
-        .icon-swatch.selected { border-color: #0ea5e9; background: #0a1e38; }
+        .icon-swatch { width: 34px; height: 34px; border-radius: 8px; background: var(--th-bg-card); border: 1px solid var(--th-border); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; transition: all 0.15s; }
+        .icon-swatch:hover { border-color: var(--th-border-focus); background: var(--th-bg-hover); }
+        .icon-swatch.selected { border-color: #0ea5e9; background: var(--th-bg-active); }
         .mc-choice:not([disabled]):hover { filter: brightness(1.1); transform: translateX(3px); }
-        .progress-bar { height: 2px; background: #1e2d4a; border-radius: 1px; overflow: hidden; }
+        .progress-bar { height: 2px; background: var(--th-border); border-radius: 1px; overflow: hidden; }
         .progress-fill { height: 100%; border-radius: 1px; transition: width 0.5s ease; }
         .tag { border-radius: 5px; padding: 3px 10px; font-size: 10px; letter-spacing: 0.07em; text-transform: uppercase; }
         .katex { color: inherit; font-size: 1.05em; }
@@ -572,17 +601,17 @@ export default function App() {
         @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.4 } }
         .slide-up { animation: slideUp 0.35s ease forwards; }
         .spin { animation: spin 1.2s linear infinite; display: inline-block; }
-        .select-field { background: #0a1220; border: 1px solid #1e2d4a; border-radius: 8px; padding: 10px 14px; color: #e2e8f0; font-family: 'DM Mono', monospace; font-size: 13px; width: 100%; cursor: pointer; appearance: none; }
-        .select-field:focus { border-color: #2d4a6e; outline: none; }
-        .breadcrumb { font-size: 11px; color: #334155; letter-spacing: 0.05em; display: flex; align-items: center; gap: 8px; margin-bottom: 28px; }
+        .select-field { background: var(--th-bg-card); border: 1px solid var(--th-border); border-radius: 8px; padding: 10px 14px; color: var(--th-text); font-family: 'DM Mono', monospace; font-size: 13px; width: 100%; cursor: pointer; appearance: none; }
+        .select-field:focus { border-color: var(--th-border-focus); outline: none; }
+        .breadcrumb { font-size: 11px; color: var(--th-text-faint); letter-spacing: 0.05em; display: flex; align-items: center; gap: 8px; margin-bottom: 28px; }
         .breadcrumb span { cursor: pointer; transition: color 0.2s; } .breadcrumb span:hover { color: #60a5fa; }
-        .card-list-item { background: #0a1220; border: 1px solid #1a2540; border-radius: 8px; padding: 12px 16px; display: flex; gap: 12px; align-items: flex-start; }
-        .tooltip { position: relative; } .tooltip:hover::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: #1e2d4a; color: #94a3b8; font-size: 10px; padding: 4px 8px; border-radius: 4px; white-space: nowrap; pointer-events: none; }
+        .card-list-item { background: var(--th-bg-card); border: 1px solid var(--th-border-soft); border-radius: 8px; padding: 12px 16px; display: flex; gap: 12px; align-items: flex-start; }
+        .tooltip { position: relative; } .tooltip:hover::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: var(--th-tooltip-bg); color: var(--th-tooltip-color); font-size: 10px; padding: 4px 8px; border-radius: 4px; white-space: nowrap; pointer-events: none; }
       `}</style>
 
       <div className="grid-bg" />
-      <div className="glow-orb" style={{ width: 500, height: 500, background: "radial-gradient(circle, rgba(14,165,233,0.05) 0%, transparent 70%)", top: -200, right: -100 }} />
-      <div className="glow-orb" style={{ width: 400, height: 400, background: "radial-gradient(circle, rgba(244,114,182,0.04) 0%, transparent 70%)", bottom: -100, left: -100 }} />
+      <div className="glow-orb" style={{ width: 500, height: 500, background: `radial-gradient(circle, var(--th-glow1) 0%, transparent 70%)`, top: -200, right: -100 }} />
+      <div className="glow-orb" style={{ width: 400, height: 400, background: `radial-gradient(circle, var(--th-glow2) 0%, transparent 70%)`, bottom: -100, left: -100 }} />
 
       {/* Done overlay */}
       {doneAnim && (
@@ -590,7 +619,7 @@ export default function App() {
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 56, animation: "popIn 0.5s cubic-bezier(0.34,1.56,0.64,1)", color: "#4ade80" }}>✓</div>
             <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 32, marginTop: 16 }}>Session Complete</div>
-            <div style={{ color: "#475569", fontSize: 12, marginTop: 8 }}>
+            <div style={{ color: "var(--th-text-subtle)", fontSize: 12, marginTop: 8 }}>
               {sessionStats.reviewed} reviewed · {sessionStats.easy} easy · {sessionStats.hard} hard
             </div>
           </div>
@@ -598,14 +627,17 @@ export default function App() {
       )}
 
       {/* Header */}
-      <div style={{ borderBottom: "1px solid #0f1a2e", padding: "14px 28px", display: "flex", alignItems: "center", justifyContent: "space-between", backdropFilter: "blur(16px)", position: "sticky", top: 0, zIndex: 50, background: "rgba(6,10,16,0.9)" }}>
+      <div style={{ borderBottom: "1px solid var(--th-border-nav)", padding: "14px 28px", display: "flex", alignItems: "center", justifyContent: "space-between", backdropFilter: "blur(16px)", position: "sticky", top: 0, zIndex: 50, background: "var(--th-bg-nav)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} onClick={() => setView("home")}>
           <div style={{ width: 26, height: 26, background: "linear-gradient(135deg, #1d4ed8, #0ea5e9)", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13 }}>∇</div>
           <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 20, letterSpacing: "-0.01em" }}>ml<span style={{ color: "#0ea5e9", fontStyle: "italic" }}>cards</span></span>
         </div>
-        <div style={{ display: "flex", gap: 4 }}>
+        <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
           <button className={`nav-item ${view === "home" ? "active" : ""}`} onClick={() => setView("home")}>decks</button>
           <button className={`nav-item ${view === "generate" ? "active" : ""}`} onClick={() => { setActiveDeck(null); setView("generate"); }}>+ generate</button>
+          <button onClick={toggleTheme} style={{ background: "none", border: "1px solid var(--th-border)", borderRadius: 6, color: "var(--th-text-dim)", fontSize: 11, padding: "5px 10px", cursor: "pointer", fontFamily: "'DM Mono', monospace", letterSpacing: "0.06em", transition: "all 0.2s", marginLeft: 4 }}>
+            {lightMode ? "◑ dark" : "◐ light"}
+          </button>
         </div>
       </div>
 
@@ -619,7 +651,7 @@ export default function App() {
                 <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 42, lineHeight: 1.1, marginBottom: 8 }}>
                   Your <span style={{ fontStyle: "italic", color: "#0ea5e9" }}>Decks</span>
                 </div>
-                <div style={{ color: "#334155", fontSize: 12 }}>
+                <div style={{ color: "var(--th-text-faint)", fontSize: 12 }}>
                   {decks.length} deck{decks.length !== 1 ? "s" : ""} · {decks.reduce((s, d) => s + d.cards.filter(c => c.nextReview <= Date.now()).length, 0)} cards due
                 </div>
               </div>
@@ -628,19 +660,19 @@ export default function App() {
 
             {/* New deck form */}
             {showNewDeckForm && (
-              <div style={{ background: "#0a1220", border: "1px solid #1e2d4a", borderRadius: 12, padding: 24, marginBottom: 28 }}>
-                <div style={{ fontSize: 11, color: "#475569", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 20 }}>create deck</div>
+              <div style={{ background: "var(--th-bg-card)", border: "1px solid var(--th-border)", borderRadius: 12, padding: 24, marginBottom: 28 }}>
+                <div style={{ fontSize: 11, color: "var(--th-text-subtle)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 20 }}>create deck</div>
                 <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
                   <input className="input-field" placeholder="Deck name..." value={newDeckName} onChange={e => setNewDeckName(e.target.value)} onKeyDown={e => e.key === "Enter" && createDeck()} style={{ flex: 1 }} />
                 </div>
                 <div style={{ marginBottom: 14 }}>
-                  <div style={{ fontSize: 10, color: "#334155", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>color</div>
+                  <div style={{ fontSize: 10, color: "var(--th-text-faint)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>color</div>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     {DECK_COLORS.map(c => <div key={c} className={`color-swatch ${newDeckColor === c ? "selected" : ""}`} style={{ background: c }} onClick={() => setNewDeckColor(c)} />)}
                   </div>
                 </div>
                 <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: 10, color: "#334155", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>icon</div>
+                  <div style={{ fontSize: 10, color: "var(--th-text-faint)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>icon</div>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     {DECK_ICONS.map(ic => <div key={ic} className={`icon-swatch ${newDeckIcon === ic ? "selected" : ""}`} onClick={() => setNewDeckIcon(ic)}>{ic}</div>)}
                   </div>
@@ -653,7 +685,7 @@ export default function App() {
             )}
 
             {decks.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "60px 0", color: "#334155" }}>
+              <div style={{ textAlign: "center", padding: "60px 0", color: "var(--th-text-faint)" }}>
                 <div style={{ fontSize: 36, marginBottom: 12 }}>◉</div>
                 <div style={{ fontSize: 13 }}>No decks yet. Create one or generate cards with AI.</div>
               </div>
@@ -671,8 +703,8 @@ export default function App() {
                         </div>
                         {due > 0 && <span className="tag" style={{ background: "#f9731618", color: "#fb923c", border: "1px solid #f9731630" }}>{due} due</span>}
                       </div>
-                      <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 20, marginBottom: 6, color: "#e2e8f0" }}>{deck.name}</div>
-                      <div style={{ fontSize: 11, color: "#334155", marginBottom: 16 }}>{deck.cards.length} cards · {mastered} mastered</div>
+                      <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 20, marginBottom: 6, color: "var(--th-text)" }}>{deck.name}</div>
+                      <div style={{ fontSize: 11, color: "var(--th-text-faint)", marginBottom: 16 }}>{deck.cards.length} cards · {mastered} mastered</div>
                       <div className="progress-bar">
                         <div className="progress-fill" style={{ width: deck.cards.length ? `${(mastered / deck.cards.length) * 100}%` : "0%", background: deck.color }} />
                       </div>
@@ -689,8 +721,8 @@ export default function App() {
           <div className="slide-up">
             <div className="breadcrumb">
               <span onClick={() => setView("home")}>decks</span>
-              <span style={{ color: "#1e2d4a" }}>›</span>
-              <span style={{ color: "#94a3b8", cursor: "default" }}>{activeDeckData.name}</span>
+              <span style={{ color: "var(--th-text-ghost)" }}>›</span>
+              <span style={{ color: "var(--th-text-muted)", cursor: "default" }}>{activeDeckData.name}</span>
             </div>
 
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 32, gap: 16 }}>
@@ -700,7 +732,7 @@ export default function App() {
                 </div>
                 <div>
                   <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 32, lineHeight: 1 }}>{activeDeckData.name}</div>
-                  <div style={{ color: "#334155", fontSize: 11, marginTop: 5 }}>
+                  <div style={{ color: "var(--th-text-faint)", fontSize: 11, marginTop: 5 }}>
                     {activeDeckData.cards.length} cards · {activeDeckData.cards.filter(c => c.nextReview <= Date.now()).length} due · {activeDeckData.cards.filter(c => c.repetitions >= 3 && c.ef > 2.2).length} mastered
                   </div>
                 </div>
@@ -724,7 +756,7 @@ export default function App() {
 
             {/* Card list */}
             {activeDeckData.cards.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "48px 0", color: "#334155" }}>
+              <div style={{ textAlign: "center", padding: "48px 0", color: "var(--th-text-faint)" }}>
                 <div style={{ fontSize: 28, marginBottom: 12 }}>◈</div>
                 <div style={{ fontSize: 13, marginBottom: 20 }}>This deck is empty.</div>
                 <button className="btn-primary" onClick={() => { setGenDeckId(activeDeckData.id); setView("generate"); }}>generate cards with AI</button>
@@ -737,18 +769,18 @@ export default function App() {
                   const daysUntil = Math.ceil((card.nextReview - Date.now()) / 86400000);
                   return (
                     <div key={card.id} className="card-list-item">
-                      <div style={{ width: 8, height: 8, borderRadius: "50%", background: mastered ? "#4ade80" : due ? "#f97316" : "#1e2d4a", marginTop: 5, flexShrink: 0 }} />
+                      <div style={{ width: 8, height: 8, borderRadius: "50%", background: mastered ? "#4ade80" : due ? "#f97316" : "var(--th-border)", marginTop: 5, flexShrink: 0 }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{card.front}</div>
-                        <div style={{ fontSize: 10, color: "#334155", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{card.back}</div>
+                        <div style={{ fontSize: 12, color: "var(--th-text-muted)", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{card.front}</div>
+                        <div style={{ fontSize: 10, color: "var(--th-text-faint)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{card.back}</div>
                       </div>
                       <div style={{ flexShrink: 0, textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
-                        <div style={{ fontSize: 10, color: due ? "#f97316" : "#334155" }}>{due ? "due" : `in ${daysUntil}d`}</div>
+                        <div style={{ fontSize: 10, color: due ? "#f97316" : "var(--th-text-faint)" }}>{due ? "due" : `in ${daysUntil}d`}</div>
                         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                           {distractorCache[card.id] && (
                             <span title="distractors cached" style={{ fontSize: 9, color: "#4ade8060", letterSpacing: "0.05em" }}>◆ mc</span>
                           )}
-                          <span style={{ fontSize: 10, color: "#1e2d4a" }}>ef {card.ef.toFixed(1)}</span>
+                          <span style={{ fontSize: 10, color: "var(--th-text-ghost)" }}>ef {card.ef.toFixed(1)}</span>
                         </div>
                       </div>
                     </div>
@@ -757,7 +789,7 @@ export default function App() {
               </div>
             )}
 
-            <div style={{ marginTop: 32, paddingTop: 24, borderTop: "1px solid #0f1a2e" }}>
+            <div style={{ marginTop: 32, paddingTop: 24, borderTop: "1px solid var(--th-border-nav)" }}>
               {/* Distractor cache management */}
               {(() => {
                 const deckCards = activeDeckData.cards;
@@ -765,7 +797,7 @@ export default function App() {
                 const totalCount = deckCards.length;
                 return totalCount > 0 ? (
                   <div style={{ marginBottom: 20 }}>
-                    <div style={{ fontSize: 10, color: "#475569", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>quiz distractors</div>
+                    <div style={{ fontSize: 10, color: "var(--th-text-subtle)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>quiz distractors</div>
                     <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                       <span style={{ fontSize: 11, color: cachedCount === totalCount ? "#4ade80" : "#f97316" }}>
                         {cachedCount}/{totalCount} cached
@@ -813,34 +845,34 @@ export default function App() {
           <div className="slide-up">
             <div className="breadcrumb">
               <span onClick={() => setView("home")}>decks</span>
-              <span style={{ color: "#1e2d4a" }}>›</span>
-              <span style={{ color: "#94a3b8", cursor: "default" }}>generate cards</span>
+              <span style={{ color: "var(--th-border)" }}>›</span>
+              <span style={{ color: "var(--th-text-muted)", cursor: "default" }}>generate cards</span>
             </div>
 
             <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 38, marginBottom: 8 }}>
               AI <span style={{ fontStyle: "italic", color: "#0ea5e9" }}>Card Generator</span>
             </div>
-            <div style={{ color: "#334155", fontSize: 12, marginBottom: 36 }}>Describe a topic and Claude will generate high-quality flashcards.</div>
+            <div style={{ color: "var(--th-text-muted)", fontSize: 12, marginBottom: 36 }}>Describe a topic and Claude will generate high-quality flashcards.</div>
 
-            <div style={{ background: "#0a1220", border: "1px solid #1e2d4a", borderRadius: 14, padding: 28 }}>
+            <div style={{ background: "var(--th-bg-card)", border: "1px solid var(--th-border)", borderRadius: 14, padding: 28 }}>
               <div style={{ marginBottom: 20 }}>
-                <label style={{ fontSize: 10, color: "#475569", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: 8 }}>topic</label>
+                <label style={{ fontSize: 10, color: "var(--th-text-subtle)", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: 8 }}>topic</label>
                 <input className="input-field" placeholder="e.g. Transformer architecture, Bayesian inference, RLHF..." value={genTopic} onChange={e => setGenTopic(e.target.value)} onKeyDown={e => e.key === "Enter" && !generating && handleGenerate()} />
-                <div style={{ fontSize: 10, color: "#1e2d4a", marginTop: 6 }}>Be specific for better cards — "attention mechanism in transformers" beats "deep learning"</div>
+                <div style={{ fontSize: 10, color: "var(--th-text-ghost)", marginTop: 6 }}>Be specific for better cards — "attention mechanism in transformers" beats "deep learning"</div>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
                 <div>
-                  <label style={{ fontSize: 10, color: "#475569", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: 8 }}>number of cards</label>
+                  <label style={{ fontSize: 10, color: "var(--th-text-subtle)", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: 8 }}>number of cards</label>
                   <div style={{ display: "flex", gap: 6 }}>
                     {[3, 5, 8, 10].map(n => (
-                      <button key={n} onClick={() => setGenCount(n)} style={{ flex: 1, padding: "8px 0", borderRadius: 6, background: genCount === n ? "#0d1a2e" : "#060a10", border: `1px solid ${genCount === n ? "#2d4a6e" : "#1a2540"}`, color: genCount === n ? "#60a5fa" : "#475569", cursor: "pointer", fontFamily: "'DM Mono', monospace", fontSize: 12, transition: "all 0.15s" }}>{n}</button>
+                      <button key={n} onClick={() => setGenCount(n)} style={{ flex: 1, padding: "8px 0", borderRadius: 6, background: genCount === n ? "var(--th-bg-active)" : "var(--th-bg)", border: `1px solid ${genCount === n ? "var(--th-border-focus)" : "var(--th-border-soft)"}`, color: genCount === n ? "#60a5fa" : "var(--th-text-subtle)", cursor: "pointer", fontFamily: "'DM Mono', monospace", fontSize: 12, transition: "all 0.15s" }}>{n}</button>
                     ))}
                   </div>
                 </div>
 
                 <div>
-                  <label style={{ fontSize: 10, color: "#475569", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: 8 }}>add to deck</label>
+                  <label style={{ fontSize: 10, color: "var(--th-text-subtle)", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: 8 }}>add to deck</label>
                   <select className="select-field" value={genDeckId} onChange={e => setGenDeckId(e.target.value)}>
                     <option value="new">+ create new deck</option>
                     {decks.map(d => <option key={d.id} value={d.id}>{d.icon} {d.name}</option>)}
@@ -850,7 +882,7 @@ export default function App() {
 
               {genDeckId === "new" && (
                 <div style={{ marginBottom: 20 }}>
-                  <label style={{ fontSize: 10, color: "#475569", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: 8 }}>new deck name <span style={{ color: "#334155" }}>(optional, defaults to topic)</span></label>
+                  <label style={{ fontSize: 10, color: "var(--th-text-subtle)", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: 8 }}>new deck name <span style={{ color: "var(--th-text-muted)" }}>(optional, defaults to topic)</span></label>
                   <input className="input-field" placeholder={genTopic || "Deck name..."} value={genDeckName} onChange={e => setGenDeckName(e.target.value)} />
                 </div>
               )}
@@ -864,12 +896,12 @@ export default function App() {
 
             {/* Examples */}
             <div style={{ marginTop: 28 }}>
-              <div style={{ fontSize: 10, color: "#334155", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 14 }}>example topics</div>
+              <div style={{ fontSize: 10, color: "var(--th-text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 14 }}>example topics</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 {["Gradient descent variants", "Convolutional neural networks", "Bayesian inference", "RLHF & alignment", "Graph neural networks", "Diffusion models", "Mixture of Experts", "Contrastive learning"].map(t => (
-                  <button key={t} onClick={() => setGenTopic(t)} style={{ background: "#0a1220", border: "1px solid #1a2540", borderRadius: 20, padding: "6px 14px", color: "#475569", fontSize: 11, cursor: "pointer", fontFamily: "'DM Mono', monospace", transition: "all 0.15s" }}
-                    onMouseOver={e => { e.target.style.borderColor = "#2d4a6e"; e.target.style.color = "#94a3b8"; }}
-                    onMouseOut={e => { e.target.style.borderColor = "#1a2540"; e.target.style.color = "#475569"; }}>
+                  <button key={t} onClick={() => setGenTopic(t)} style={{ background: "var(--th-bg-card)", border: "1px solid var(--th-border-soft)", borderRadius: 20, padding: "6px 14px", color: "var(--th-text-subtle)", fontSize: 11, cursor: "pointer", fontFamily: "'DM Mono', monospace", transition: "all 0.15s" }}
+                    onMouseOver={e => { e.currentTarget.style.borderColor = "var(--th-border-focus)"; e.currentTarget.style.color = "var(--th-text-muted)"; }}
+                    onMouseOut={e => { e.currentTarget.style.borderColor = "var(--th-border-soft)"; e.currentTarget.style.color = "var(--th-text-subtle)"; }}>
                     {t}
                   </button>
                 ))}
@@ -887,8 +919,8 @@ export default function App() {
                   <div className="progress-fill" style={{ width: `${progress}%`, background: activeDeckData.color }} />
                 </div>
               </div>
-              <div style={{ fontSize: 11, color: "#334155", flexShrink: 0 }}>{qIdx + 1} / {queue.length}</div>
-              <button style={{ background: "transparent", border: "none", color: "#334155", cursor: "pointer", fontSize: 14, padding: "2px 6px", transition: "color 0.2s" }} onClick={() => setView("deck")} onMouseOver={e => e.target.style.color="#94a3b8"} onMouseOut={e => e.target.style.color="#334155"}>✕</button>
+              <div style={{ fontSize: 11, color: "var(--th-text-muted)", flexShrink: 0 }}>{qIdx + 1} / {queue.length}</div>
+              <button style={{ background: "transparent", border: "none", color: "var(--th-text-muted)", cursor: "pointer", fontSize: 14, padding: "2px 6px", transition: "color 0.2s" }} onClick={() => setView("deck")} onMouseOver={e => e.currentTarget.style.color="var(--th-text)"} onMouseOut={e => e.currentTarget.style.color="var(--th-text-muted)"}>✕</button>
             </div>
 
             <div style={{ marginBottom: 18, display: "flex", alignItems: "center", gap: 8 }}>
@@ -905,25 +937,25 @@ export default function App() {
                 {/* Flip card */}
                 <div className="card-scene" style={{ height: 300, marginBottom: 20 }} onClick={() => setFlipped(f => !f)}>
                   <div className={`card-inner ${flipped ? "flipped" : ""}`}>
-                    <div className="card-face" style={{ background: "#0a1220", border: "1px solid #1a2540", justifyContent: "space-between" }}>
-                      <div style={{ fontSize: 10, color: "#1e2d4a", letterSpacing: "0.12em", textTransform: "uppercase" }}>question</div>
-                      <div style={{ fontSize: 22, lineHeight: 1.6, color: "#e2e8f0", flex: 1, display: "flex", alignItems: "center", padding: "16px 0" }}>
+                    <div className="card-face" style={{ background: "var(--th-bg-card)", border: "1px solid var(--th-border-soft)", justifyContent: "space-between" }}>
+                      <div style={{ fontSize: 10, color: "var(--th-text-ghost)", letterSpacing: "0.12em", textTransform: "uppercase" }}>question</div>
+                      <div style={{ fontSize: 22, lineHeight: 1.6, color: "var(--th-text)", flex: 1, display: "flex", alignItems: "center", padding: "16px 0" }}>
                         <LatexRenderer text={current.front} serif={true} />
                       </div>
-                      <div style={{ fontSize: 10, color: "#1e2d4a", letterSpacing: "0.08em" }}>tap to reveal ↗</div>
+                      <div style={{ fontSize: 10, color: "var(--th-text-ghost)", letterSpacing: "0.08em" }}>tap to reveal ↗</div>
                     </div>
-                    <div className="card-face card-back-face" style={{ background: "#080f1e", border: `1px solid ${activeDeckData.color}30`, justifyContent: "space-between" }}>
+                    <div className="card-face card-back-face" style={{ background: "var(--th-bg-card-alt)", border: `1px solid ${activeDeckData.color}30`, justifyContent: "space-between" }}>
                       <div style={{ fontSize: 10, color: activeDeckData.color, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.7 }}>answer</div>
-                      <div style={{ fontSize: 13, lineHeight: 1.9, color: "#b0bec5", flex: 1, overflowY: "auto", padding: "14px 0" }}>
+                      <div style={{ fontSize: 13, lineHeight: 1.9, color: "var(--th-text-answer)", flex: 1, overflowY: "auto", padding: "14px 0" }}>
                         <LatexRenderer text={current.back} />
                       </div>
-                      <div style={{ fontSize: 10, color: "#1e2d4a" }}>interval {current.interval}d · ef {current.ef.toFixed(2)} · rep {current.repetitions}</div>
+                      <div style={{ fontSize: 10, color: "var(--th-text-ghost)" }}>interval {current.interval}d · ef {current.ef.toFixed(2)} · rep {current.repetitions}</div>
                     </div>
                   </div>
                 </div>
                 {flipped && cardResources[current.id]?.length > 0 && (
                   <div style={{ marginBottom: 14 }}>
-                    <button onClick={() => setLearnMoreOpen(o => !o)} style={{ background: "none", border: "1px solid #1a2540", borderRadius: 6, color: "#64748b", fontSize: 11, padding: "5px 12px", cursor: "pointer", letterSpacing: "0.06em", width: "100%" }}>
+                    <button onClick={() => setLearnMoreOpen(o => !o)} style={{ background: "none", border: "1px solid var(--th-border-soft)", borderRadius: 6, color: "var(--th-text-dim)", fontSize: 11, padding: "5px 12px", cursor: "pointer", letterSpacing: "0.06em", width: "100%" }}>
                       {learnMoreOpen ? "▾ learn more" : "▸ learn more"}
                     </button>
                     {learnMoreOpen && (
@@ -931,9 +963,9 @@ export default function App() {
                         {cardResources[current.id].map((r, i) => {
                           const typeColor = { paper: "#60a5fa", blog: "#4ade80", wiki: "#a78bfa", notes: "#fb923c" }[r.type] ?? "#64748b";
                           return (
-                            <a key={i} href={r.url} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 8, background: "#0a1220", border: "1px solid #1a2540", borderRadius: 6, padding: "7px 10px", textDecoration: "none" }}>
+                            <a key={i} href={r.url} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--th-bg-card)", border: "1px solid var(--th-border-soft)", borderRadius: 6, padding: "7px 10px", textDecoration: "none" }}>
                               <span style={{ fontSize: 9, background: `${typeColor}20`, color: typeColor, border: `1px solid ${typeColor}40`, borderRadius: 4, padding: "2px 6px", letterSpacing: "0.08em", flexShrink: 0 }}>{r.type}</span>
-                              <span style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.4 }}>{r.title}</span>
+                              <span style={{ fontSize: 12, color: "var(--th-text-muted)", lineHeight: 1.4 }}>{r.title}</span>
                             </a>
                           );
                         })}
@@ -943,7 +975,7 @@ export default function App() {
                 )}
                 {flipped ? (
                   <div>
-                    <div style={{ fontSize: 10, color: "#334155", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12, textAlign: "center" }}>how well did you recall?</div>
+                    <div style={{ fontSize: 10, color: "var(--th-text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12, textAlign: "center" }}>how well did you recall?</div>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8 }}>
                       {QUALITY_BTNS.map(btn => (
                         <button key={btn.q} className="rate-btn" onClick={() => handleRate(btn.q)} style={{ background: `${btn.color}15`, border: `1px solid ${btn.color}35`, color: btn.color }}>
@@ -954,7 +986,7 @@ export default function App() {
                     </div>
                   </div>
                 ) : (
-                  <div style={{ textAlign: "center", color: "#1e2d4a", fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "16px 0" }}>
+                  <div style={{ textAlign: "center", color: "var(--th-text-ghost)", fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "16px 0" }}>
                     recall your answer, then tap the card
                   </div>
                 )}
@@ -963,15 +995,15 @@ export default function App() {
               /* ── Multiple Choice Mode ── */
               <div>
                 {/* Question */}
-                <div style={{ background: "#0a1220", border: "1px solid #1a2540", borderRadius: 14, padding: "28px 32px", marginBottom: 20, minHeight: 120, display: "flex", alignItems: "center" }}>
-                  <div style={{ fontSize: 20, lineHeight: 1.6, color: "#e2e8f0", width: "100%" }}>
+                <div style={{ background: "var(--th-bg-card)", border: "1px solid var(--th-border-soft)", borderRadius: 14, padding: "28px 32px", marginBottom: 20, minHeight: 120, display: "flex", alignItems: "center" }}>
+                  <div style={{ fontSize: 20, lineHeight: 1.6, color: "var(--th-text)", width: "100%" }}>
                     <LatexRenderer text={current.front} serif={true} />
                   </div>
                 </div>
 
                 {/* Choices */}
                 {mcState?.loading ? (
-                  <div style={{ textAlign: "center", padding: "32px 0", color: "#334155" }}>
+                  <div style={{ textAlign: "center", padding: "32px 0", color: "var(--th-text-muted)" }}>
                     <span className="spin" style={{ fontSize: 20, marginRight: 10 }}>◉</span>
                     <span style={{ fontSize: 12, letterSpacing: "0.08em" }}>generating choices...</span>
                   </div>
@@ -986,7 +1018,7 @@ export default function App() {
                       const isSelected = mcState.selected === idx;
                       const isRevealed = mcState.selected !== null;
                       const isCorrect = choice.correct;
-                      let bg = "#0a1220", border = "#1a2540", color = "#94a3b8";
+                      let bg = "var(--th-bg-card)", border = "var(--th-border-soft)", color = "var(--th-text-muted)";
                       if (isRevealed && isCorrect) { bg = "#4ade8015"; border = "#4ade8050"; color = "#4ade80"; }
                       else if (isRevealed && isSelected && !isCorrect) { bg = "#ef444415"; border = "#ef444450"; color = "#ef4444"; }
                       return (
@@ -1007,7 +1039,7 @@ export default function App() {
                       <div style={{ marginTop: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <span style={{ fontSize: 12, color: mcState.choices[mcState.selected].correct ? "#4ade80" : "#ef4444" }}>
                           {mcState.choices[mcState.selected].correct ? "✓ Correct" : "✗ Incorrect"}
-                          <span style={{ color: "#334155", marginLeft: 8 }}>
+                          <span style={{ color: "var(--th-text-muted)", marginLeft: 8 }}>
                             {sessionStats.reviewed + 1 > 0 ? `${sessionStats.correct + (mcState.choices[mcState.selected].correct ? 1 : 0)}/${sessionStats.reviewed + 1} this session` : ""}
                           </span>
                         </span>
