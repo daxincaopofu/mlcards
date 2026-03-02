@@ -58,5 +58,86 @@
     { "title": "LoRA: Low-Rank Adaptation of Large Language Models (Hu et al., 2021)", "url": "https://arxiv.org/abs/2106.09685", "type": "paper" },
     { "title": "BERT: Pre-training of Deep Bidirectional Transformers (Devlin et al., 2018)", "url": "https://arxiv.org/abs/1810.04805", "type": "paper" },
     { "title": "Transfer learning — Wikipedia", "url": "https://en.wikipedia.org/wiki/Transfer_learning", "type": "wiki" }
+  ],
+  "cml-1": [
+    { "title": "Expectation–maximization algorithm — Wikipedia", "url": "https://en.wikipedia.org/wiki/Expectation%E2%80%93maximization_algorithm", "type": "wiki" },
+    { "title": "XGBoost: A Scalable Tree Boosting System (Chen & Guestrin, 2016)", "url": "https://arxiv.org/abs/1603.02754", "type": "paper" }
+  ],
+  "cml-2": [
+    { "title": "Random forest — Wikipedia", "url": "https://en.wikipedia.org/wiki/Random_forest", "type": "wiki" },
+    { "title": "A Decision-Theoretic Generalization of On-Line Learning — ensemble context", "url": "https://en.wikipedia.org/wiki/Ensemble_learning", "type": "wiki" }
+  ],
+  "cml-3": [
+    { "title": "Gradient boosting — Wikipedia", "url": "https://en.wikipedia.org/wiki/Gradient_boosting", "type": "wiki" },
+    { "title": "XGBoost: A Scalable Tree Boosting System (Chen & Guestrin, 2016)", "url": "https://arxiv.org/abs/1603.02754", "type": "paper" }
+  ],
+  "cml-4": [
+    { "title": "Principal component analysis — Wikipedia", "url": "https://en.wikipedia.org/wiki/Principal_component_analysis", "type": "wiki" },
+    { "title": "Singular value decomposition — Wikipedia", "url": "https://en.wikipedia.org/wiki/Singular_value_decomposition", "type": "wiki" },
+    { "title": "The Elements of Statistical Learning (Hastie, Tibshirani & Friedman) — free PDF", "url": "https://hastie.su.domains/ElemStatLearn/", "type": "notes" }
+  ],
+  "cml-5": [
+    { "title": "k-nearest neighbors algorithm — Wikipedia", "url": "https://en.wikipedia.org/wiki/K-nearest_neighbors_algorithm", "type": "wiki" },
+    { "title": "Image Classification: kNN — CS231n", "url": "https://cs231n.github.io/classification/", "type": "notes" }
+  ],
+  "cml-6": [
+    { "title": "Decision tree learning — Wikipedia", "url": "https://en.wikipedia.org/wiki/Decision_tree_learning", "type": "wiki" },
+    { "title": "Gini impurity — Wikipedia", "url": "https://en.wikipedia.org/wiki/Decision_tree_learning#Gini_impurity", "type": "wiki" }
+  ],
+  "cml-7": [
+    { "title": "Curse of dimensionality — Wikipedia", "url": "https://en.wikipedia.org/wiki/Curse_of_dimensionality", "type": "wiki" },
+    { "title": "The Elements of Statistical Learning (Hastie, Tibshirani & Friedman) — free PDF", "url": "https://hastie.su.domains/ElemStatLearn/", "type": "notes" }
+  ],
+  "cml-8": [
+    { "title": "Naive Bayes classifier — Wikipedia", "url": "https://en.wikipedia.org/wiki/Naive_Bayes_classifier", "type": "wiki" },
+    { "title": "Naive Bayes Text Classification — CS229 notes", "url": "https://cs229.stanford.edu/notes2022fall/main_notes.pdf", "type": "notes" }
+  ],
+  "cml-9": [
+    { "title": "Cross-validation (statistics) — Wikipedia", "url": "https://en.wikipedia.org/wiki/Cross-validation_(statistics)", "type": "wiki" },
+    { "title": "The Elements of Statistical Learning (Hastie, Tibshirani & Friedman) — free PDF", "url": "https://hastie.su.domains/ElemStatLearn/", "type": "notes" }
+  ],
+  "cml-10": [
+    { "title": "AdaBoost — Wikipedia", "url": "https://en.wikipedia.org/wiki/AdaBoost", "type": "wiki" },
+    { "title": "Additive Logistic Regression (Friedman et al., 2000) — connection to boosting", "url": "https://projecteuclid.org/journals/annals-of-statistics/volume-28/issue-2/Additive-logistic-regression-a-statistical-view-of-boosting/10.1214/aos/1016218223.full", "type": "paper" }
+  ],
+  "ps-1": [
+    { "title": "Bayes' theorem — Wikipedia", "url": "https://en.wikipedia.org/wiki/Bayes%27_theorem", "type": "wiki" },
+    { "title": "Bayesian inference — Wikipedia", "url": "https://en.wikipedia.org/wiki/Bayesian_inference", "type": "wiki" }
+  ],
+  "ps-2": [
+    { "title": "Central limit theorem — Wikipedia", "url": "https://en.wikipedia.org/wiki/Central_limit_theorem", "type": "wiki" },
+    { "title": "Law of large numbers — Wikipedia", "url": "https://en.wikipedia.org/wiki/Law_of_large_numbers", "type": "wiki" }
+  ],
+  "ps-3": [
+    { "title": "Maximum likelihood estimation — Wikipedia", "url": "https://en.wikipedia.org/wiki/Maximum_likelihood_estimation", "type": "wiki" },
+    { "title": "Cross-entropy — Wikipedia", "url": "https://en.wikipedia.org/wiki/Cross-entropy", "type": "wiki" }
+  ],
+  "ps-4": [
+    { "title": "Kullback–Leibler divergence — Wikipedia", "url": "https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence", "type": "wiki" },
+    { "title": "From Autoencoder to Beta-VAE (KL divergence in VAEs) — Lil'Log", "url": "https://lilianweng.github.io/posts/2018-08-12-vae/", "type": "blog" }
+  ],
+  "ps-5": [
+    { "title": "Law of total expectation — Wikipedia", "url": "https://en.wikipedia.org/wiki/Law_of_total_expectation", "type": "wiki" },
+    { "title": "Bias–variance tradeoff — Wikipedia", "url": "https://en.wikipedia.org/wiki/Bias%E2%80%93variance_tradeoff", "type": "wiki" }
+  ],
+  "ps-6": [
+    { "title": "Bayesian inference — Wikipedia", "url": "https://en.wikipedia.org/wiki/Bayesian_inference", "type": "wiki" },
+    { "title": "Frequentist inference — Wikipedia", "url": "https://en.wikipedia.org/wiki/Frequentist_inference", "type": "wiki" }
+  ],
+  "ps-7": [
+    { "title": "Sufficient statistic — Wikipedia", "url": "https://en.wikipedia.org/wiki/Sufficient_statistic", "type": "wiki" },
+    { "title": "Fisher–Neyman factorization theorem — Wikipedia", "url": "https://en.wikipedia.org/wiki/Sufficient_statistic#Fisher%E2%80%93Neyman_factorization_theorem", "type": "wiki" }
+  ],
+  "ps-8": [
+    { "title": "Cross-entropy — Wikipedia", "url": "https://en.wikipedia.org/wiki/Cross-entropy", "type": "wiki" },
+    { "title": "Maximum likelihood estimation — Wikipedia", "url": "https://en.wikipedia.org/wiki/Maximum_likelihood_estimation", "type": "wiki" }
+  ],
+  "ps-9": [
+    { "title": "Fisher information — Wikipedia", "url": "https://en.wikipedia.org/wiki/Fisher_information", "type": "wiki" },
+    { "title": "Cramér–Rao bound — Wikipedia", "url": "https://en.wikipedia.org/wiki/Cram%C3%A9r%E2%80%93Rao_bound", "type": "wiki" }
+  ],
+  "ps-10": [
+    { "title": "Monte Carlo method — Wikipedia", "url": "https://en.wikipedia.org/wiki/Monte_Carlo_method", "type": "wiki" },
+    { "title": "REINFORCE algorithm — Wikipedia", "url": "https://en.wikipedia.org/wiki/Reinforcement_learning#Direct_policy_search", "type": "wiki" }
   ]
 }

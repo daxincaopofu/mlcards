@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**mlcards** is a single-file React spaced-repetition flashcard app for machine learning education. The entire application lives in `ml-flashcards.jsx` (~1100 lines). It was originally designed to run as a **Claude.ai Artifact** but now ships with a full Vite local dev setup.
+**mlcards** is a modular React spaced-repetition flashcard app for machine learning education. It was originally designed to run as a **Claude.ai Artifact** and now ships with a full Vite local dev setup.
 
 ## Running Locally
 
@@ -21,25 +21,57 @@ There are no lint or test commands.
 
 ## Architecture
 
-The app is a **monolithic React component** (`App`) with no sub-files. All logic is co-located in `ml-flashcards.jsx`.
+The app is split into focused modules under `src/`:
 
-### Core Modules (in order of definition)
+```
+src/
+  main.jsx                  Entry point — mounts App into #root
+  App.jsx                   Main component: state, effects, handlers, all views
+  utils/
+    sm2.js                  SM-2 spaced-repetition algorithm (sm2, initCard)
+    storage.js              Storage adapter + distractor cache helpers
+    api.js                  anthropicHeaders, generateCards, generateDistractors, shuffle
+  constants/
+    index.js                SEED_DECKS (raw), DECK_COLORS, DECK_ICONS, QUALITY_BTNS
+  components/
+    LatexRenderer.jsx       KaTeX rendering (npm package, synchronous)
+    FlipCard.jsx            Flip-mode review card + learn more + rating buttons
+    MCView.jsx              Multiple-choice review mode
+public/
+  distractors.json          Offline distractors for all seed cards
+  resources.json            "Learn More" links for all seed cards (all 4 decks)
+```
 
-1. **LaTeX Renderer** — Dynamically loads KaTeX 0.16.9 from CDN. `LatexRenderer` component parses `$...$` (inline) and `$$...$$` (display) delimiters and renders via `window.katex.renderToString()`.
+### Core Modules
 
-2. **SM-2 Algorithm** — `sm2(card, quality)` implements spaced-repetition. Quality: 0=Blackout, 1=Hard, 2=Good, 3=Easy. Updates easiness factor, interval, and `nextReview`. `initCard()` creates fresh card metadata.
+1. **`src/utils/sm2.js`** — Pure functions, no React. `sm2(card, quality)` implements spaced-repetition. Quality: 0=Blackout, 1=Hard, 2=Good, 3=Easy. `initCard(card)` creates fresh SM-2 metadata.
 
-3. **Storage Layer** — `window.storage` (artifact API) with automatic fallback to `localStorage` via an adapter defined at module level. Keys:
+2. **`src/utils/storage.js`** — `window.storage` (artifact API) with automatic fallback to `localStorage`. `loadDecks(SEED_DECKS, initCard)` implements smarter seeding: merges new seed decks into returning users' data by comparing deck IDs. Keys:
    - `mlcards:decks` — full deck/card data
-   - `mlcards:distractors` — `{ [cardId]: string[] }` user-cached distractors (merged on top of bundled ones)
+   - `mlcards:distractors` — `{ [cardId]: string[] }` user-cached distractors
 
-4. **AI Generation** — `anthropicHeaders()` builds headers including `x-api-key` from `import.meta.env.VITE_ANTHROPIC_API_KEY`. Two API calls:
-   - `generateCards(topic, count, deckName)` → `claude-sonnet-4-20250514` → `{cards: [{front, back}]}`
-   - `generateDistractors(card, allCards)` → 3 plausible-but-wrong answers, auto-cached
+3. **`src/utils/api.js`** — `anthropicHeaders()` builds headers with `x-api-key` from `import.meta.env.VITE_ANTHROPIC_API_KEY`. `generateCards()` and `generateDistractors()` call `claude-sonnet-4-20250514`.
 
-5. **State Management** — All state in `useState` hooks in `App`. Key variables: `decks`, `view` (`"home"|"deck"|"review"|"generate"`), `reviewMode` (`"flip"|"mc"`), `queue`, `qIdx`, `flipped`, `mcState`, `distractorCache`, `cardResources`, `learnMoreOpen`, `sessionStats`.
+4. **`src/constants/index.js`** — Raw `SEED_DECKS` (no `initCard` applied — `loadDecks` handles that), plus palette and quality button constants.
 
-6. **UI Views** — Four views rendered conditionally: Home (deck grid), Deck (card list + distractor manager), Review (flip or MC mode), Generate (AI form).
+5. **`src/components/LatexRenderer.jsx`** — Imports `katex` from npm (bundled, synchronous — no CDN loading, no async state). Parses `$...$` (inline) and `$$...$$` (display) delimiters.
+
+6. **`src/components/FlipCard.jsx`** — Props: `{ current, flipped, setFlipped, activeDeckData, cardResources, learnMoreOpen, setLearnMoreOpen, handleRate }`. Renders the 3D flip card, learn-more section, and quality rating buttons.
+
+7. **`src/components/MCView.jsx`** — Props: `{ current, mcState, handleMcSelect, handleMcNext, loadMcChoices, activeDeck, getDeck, sessionStats, qIdx, queueLength }`. Renders the question box and multiple-choice answer buttons.
+
+8. **`src/App.jsx`** — All state management, effects, handlers, and view routing. Generate form state uses `useReducer` (`genInitial`, `genReducer`, `dispatchGen`). The CSS `<style>` block lives here with named classes for flip card, MC, and generate view elements.
+
+### Generate State (useReducer)
+
+```js
+const genInitial = { topic: "", count: 5, deckId: "new", deckName: "", generating: false, error: "" };
+// Actions: SET { key, value } | START | ERROR { error } | RESET
+const [gen, dispatchGen] = useReducer(genReducer, genInitial);
+```
+
+Access: `gen.topic`, `gen.count`, `gen.deckId`, `gen.deckName`, `gen.generating`, `gen.error`.
+Dispatch: `dispatchGen({ type: "SET", key: "topic", value: v })` etc.
 
 ### Static JSON files (`public/`)
 
@@ -47,14 +79,14 @@ These are fetched at app startup and merged with any user-persisted data:
 
 | File | Purpose |
 |---|---|
-| `public/distractors.json` | `{ [cardId]: string[] }` — 3 offline distractors per seed card. Merged with `mlcards:distractors` from storage; user entries take priority on key conflicts. |
-| `public/resources.json` | `{ [cardId]: [{title, url, type}] }` — "Learn More" links per card. `type` is one of `paper`, `blog`, `wiki`, `notes`. Currently populated for the Deep Learning deck only. |
+| `public/distractors.json` | `{ [cardId]: string[] }` — 3 offline distractors per seed card. Merged with `mlcards:distractors` from storage; user entries take priority. |
+| `public/resources.json` | `{ [cardId]: [{title, url, type}] }` — "Learn More" links per card. `type` is one of `paper`, `blog`, `wiki`, `notes`. Populated for all 4 seed decks. |
 
 To add resources for new cards, add entries to `public/resources.json` keyed by card ID. To add offline distractors, add entries to `public/distractors.json`.
 
 ### Seed Decks (`SEED_DECKS` constant)
 
-Four decks defined directly in `ml-flashcards.jsx`, used as fallback when storage is empty:
+Four decks defined in `src/constants/index.js` as raw card objects (no SM-2 fields). `loadDecks()` applies `initCard` at load time:
 
 | ID | Name | Cards |
 |---|---|---|
@@ -65,13 +97,13 @@ Four decks defined directly in `ml-flashcards.jsx`, used as fallback when storag
 
 Card IDs are stable keys used across `distractors.json` and `resources.json`. When adding new seed cards, assign a new prefixed ID (e.g. `cml-11`) and add matching entries to both JSON files if applicable.
 
-**Note:** Returning users who already have decks persisted in storage will not see new seed decks automatically — they only load when storage is empty.
+**Smarter seeding:** Returning users with existing storage will also receive new seed decks — `loadDecks` compares deck IDs and appends any missing seed decks.
 
 ### Data Flow
 
 ```
 App start → fetch distractors.json + resources.json → merge with storage
-         → load decks (storage or SEED_DECKS fallback)
+         → loadDecks(SEED_DECKS, initCard) → smart merge with storage
          → Home view → Deck view → Review (flip or MC) → SM-2 update → Save
                     └→ Generate view → AI cards → auto-cache distractors → Save
 ```
@@ -96,33 +128,48 @@ Semantic colors (green for correct/mastered, red for errors/delete, orange for d
 
 ### Styling
 
-Embedded CSS only (no framework). Fonts from Google Fonts: DM Mono + Cormorant Garamond. 3D card flip via CSS `perspective` + `rotateY(180deg)`. Responsive grid with `minmax()`.
+Embedded CSS in `App.jsx`'s `<style>` block (no framework). Named CSS classes for key UI regions:
+- `.card-front-face`, `.card-question-label`, `.card-tap-hint`, `.card-sm2-stats` — flip card elements
+- `.learn-more-btn`, `.resource-link` — learn more section
+- `.mc-question-box` — MC question container
+- `.recall-label`, `.recall-hint` — flip card post-flip UI
+- `.review-counter` — progress counter
+- `.generate-panel`, `.gen-label` — generate view form
 
-## Potential Refactors
+Fonts from Google Fonts: DM Mono + Cormorant Garamond. 3D card flip via CSS `perspective` + `rotateY(180deg)`. Responsive grid with `minmax()`.
 
-These are architectural improvements worth considering if the app grows beyond its current scope:
+## Known Issues / Future Work
 
-### 1. Split the monolith into modules
-`ml-flashcards.jsx` is ~1100 lines. Natural split points:
-- `utils/sm2.js` — SM-2 algorithm (pure function, no React)
-- `utils/storage.js` — storage adapter + distractor cache helpers
-- `utils/api.js` — `anthropicHeaders()`, `generateCards()`, `generateDistractors()`
-- `constants/seeds.js` — `SEED_DECKS`, `DECK_COLORS`, `QUALITY_BTNS`
-- `components/LatexRenderer.jsx` — KaTeX loading + rendering
-- `components/FlipCard.jsx` — review flip view
-- `components/MCView.jsx` — multiple choice view
+- **No manual card editor** — cards can only be created via AI generation or by editing seed data directly.
+- **No card deletion** — individual cards cannot be deleted, only entire decks.
+- **SM-2 on MC mode is coarse** — correct/wrong maps to quality 3/1. A finer-grained rating after MC reveal would be more accurate.
+- **Distractor cache is not invalidated** — if a card's `back` is edited, its cached distractors become stale. Cache should be keyed on a hash of `card.back`, not just `card.id`.
+- **`distractorCache` ref in `loadMcChoices`** — the function closes over `distractorCache` state. If called rapidly it could read stale cache. Use a ref to mirror the cache value if this becomes a problem.
 
-### 2. Replace inline styles with CSS classes
-Many JSX elements use inline `style={{...}}` with `var(--th-*)` values. Moving these to named CSS classes (in the `<style>` block) would reduce JSX noise and make hover/active states manageable without `onMouseOver`/`onMouseOut` handlers.
+## Data Shapes
 
-### 3. Group related state
-The generate form has 6 separate `useState` hooks (`genTopic`, `genCount`, `genDeckId`, `genDeckName`, `generating`, `genError`). Consolidating into a single `genState` object with `useReducer` would simplify the form logic.
+```js
+// Deck
+{
+  id: "deck-{timestamp}",
+  name: string,
+  color: string,   // hex, from DECK_COLORS
+  icon: string,    // from DECK_ICONS
+  created: number, // Date.now()
+  cards: Card[]
+}
 
-### 4. Bundle KaTeX instead of CDN load
-KaTeX is currently loaded dynamically from CDN into `window.katex`. Installing `katex` as an npm dependency would eliminate the CDN dependency and async loading state.
+// Card (includes SM-2 fields after initCard())
+{
+  id: string,
+  front: string,   // may contain LaTeX $...$ or $$...$$
+  back: string,    // may contain LaTeX, \n for line breaks
+  ef: number,      // easiness factor, min 1.3, default 2.5
+  interval: number,// days until next review
+  repetitions: number,
+  nextReview: number // Date.now() + interval * 86400000
+}
 
-### 5. Smarter seed deck initialization
-New seed decks are only visible to users with empty storage. A migration pattern (check `deck-N` IDs against existing decks, seed any missing ones) would let existing users receive new content.
-
-### 6. Extend `resources.json` to all decks
-Currently only the Deep Learning deck has "Learn More" links. Classical ML and Probability & Statistics decks have no entries in `public/resources.json`.
+// Distractor cache
+{ [cardId: string]: string[] }  // 3 strings per card
+```
