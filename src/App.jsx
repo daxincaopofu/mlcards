@@ -6,6 +6,7 @@ import { SEED_DECKS, DECK_COLORS, DECK_ICONS, QUALITY_BTNS } from "./constants/i
 import LatexRenderer from "./components/LatexRenderer.jsx";
 import FlipCard from "./components/FlipCard.jsx";
 import MCView from "./components/MCView.jsx";
+import CardEditor from "./components/CardEditor.jsx";
 
 // ── Generate state (Refactor 3: useReducer) ───────────────────────────────────
 const genInitial = { topic: "", count: 5, deckId: "new", deckName: "", generating: false, error: "" };
@@ -41,6 +42,7 @@ export default function App() {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [cardResources, setCardResources] = useState({});
   const [learnMoreOpen, setLearnMoreOpen] = useState(false);
+  const [editingCard, setEditingCard] = useState(null); // { deckId, card } | null
   const [lightMode, setLightMode] = useState(() => localStorage.getItem("mlcards:theme") === "light");
 
   const toggleTheme = () => setLightMode(prev => {
@@ -222,6 +224,21 @@ export default function App() {
     if (activeDeck === id) { setActiveDeck(null); setView("home"); }
   }
 
+  function saveCardEdit(deckId, cardId, newFront, newBack) {
+    updateDecks(prev => prev.map(d =>
+      d.id === deckId
+        ? { ...d, cards: d.cards.map(c => c.id === cardId ? { ...c, front: newFront, back: newBack } : c) }
+        : d
+    ));
+    if (distractorCache[cardId]) {
+      const newCache = { ...distractorCache };
+      delete newCache[cardId];
+      setDistractorCache(newCache);
+      saveDistractorCache(newCache);
+    }
+    setEditingCard(null);
+  }
+
   const current = queue[qIdx];
   const progress = queue.length > 0 ? (qIdx / queue.length) * 100 : 0;
   const activeDeckData = activeDeck ? getDeck(activeDeck) : null;
@@ -306,6 +323,13 @@ export default function App() {
         .breadcrumb span { cursor: pointer; transition: color 0.2s; } .breadcrumb span:hover { color: #60a5fa; }
         .card-list-item { background: var(--th-bg-card); border: 1px solid var(--th-border-soft); border-radius: 8px; padding: 12px 16px; display: flex; gap: 12px; align-items: flex-start; }
         .tooltip { position: relative; } .tooltip:hover::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: var(--th-tooltip-bg); color: var(--th-tooltip-color); font-size: 10px; padding: 4px 8px; border-radius: 4px; white-space: nowrap; pointer-events: none; }
+        .card-editor-modal { position: fixed; inset: 0; background: var(--th-bg-overlay); display: flex; align-items: center; justify-content: center; z-index: 200; animation: fadeIn 0.2s; padding: 24px; }
+        .card-editor-box { background: var(--th-bg-card); border: 1px solid var(--th-border); border-radius: 16px; width: 100%; max-width: 780px; max-height: 88vh; overflow-y: auto; padding: 28px; display: flex; flex-direction: column; gap: 20px; }
+        .editor-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+        .editor-preview { background: var(--th-bg-card-alt); border: 1px solid var(--th-border-soft); border-radius: 8px; padding: 12px 14px; font-size: 13px; line-height: 1.8; color: var(--th-text-answer); min-height: 80px; }
+        .card-edit-btn { background: none; border: none; color: var(--th-text-faint); cursor: pointer; font-size: 13px; padding: 2px 4px; opacity: 0; transition: opacity 0.15s, color 0.15s; line-height: 1; font-family: inherit; }
+        .card-list-item:hover .card-edit-btn { opacity: 1; }
+        .card-edit-btn:hover { color: #0ea5e9; }
       `}</style>
 
       <div className="grid-bg" />
@@ -322,6 +346,14 @@ export default function App() {
             </div>
           </div>
         </div>
+      )}
+
+      {editingCard && (
+        <CardEditor
+          card={editingCard.card}
+          onSave={(front, back) => saveCardEdit(editingCard.deckId, editingCard.card.id, front, back)}
+          onClose={() => setEditingCard(null)}
+        />
       )}
 
       {/* Header */}
@@ -473,6 +505,7 @@ export default function App() {
                       <div style={{ flexShrink: 0, textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
                         <div style={{ fontSize: 10, color: due ? "#f97316" : "var(--th-text-faint)" }}>{due ? "due" : `in ${daysUntil}d`}</div>
                         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                          <button className="card-edit-btn" onClick={e => { e.stopPropagation(); setEditingCard({ deckId: activeDeck, card }); }}>✎</button>
                           {distractorCache[card.id] && (
                             <span title="distractors cached" style={{ fontSize: 9, color: "#4ade8060", letterSpacing: "0.05em" }}>◆ mc</span>
                           )}
